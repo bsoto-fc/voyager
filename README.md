@@ -1,30 +1,28 @@
-This is a Kotlin Multiplatform project targeting Android, Desktop (JVM).
+## Voyager (Administrador de archivos mp3) 
 
-* [/shared](./shared/src) is for code that will be shared across your Compose Multiplatform applications.
-  It contains several subfolders:
-  - [commonMain](./shared/src/commonMain/kotlin) is for code that’s common for all targets.
-  - Other folders are for Kotlin code that will be compiled for only the platform indicated in the folder name.
-    For example, if you want to use Apple’s CoreCrypto for the iOS part of your Kotlin app,
-    the [iosMain](./shared/src/iosMain/kotlin) folder would be the right place for such calls.
-    Similarly, if you want to edit the Desktop (JVM) specific part, the [jvmMain](./shared/src/jvmMain/kotlin)
-    folder is the appropriate location.
+Este es un proyecto multiplataforma para Android y Escritorio (JVM). Consiste de un administrador de archivos mp3.
+Forma parte del proyecto 2 de la materia "Modelado y programación" impartido en la facultad de ciencias de la UNAM.
 
-### Running the apps
+### Requisitos
+- Kotlin
+- Gradle
+- OpenJDK 21
 
-Use the run configurations provided by the run widget in your IDE's toolbar. You can also use these commands and options:
+Instalación en Void Linux:
 
-- Android app: `./gradlew :androidApp:assembleDebug`
-- Desktop app:
+```
+# xbps-install openjdk21 gradle kotlin-bin
+```
+
+### Instrucciones de uso
+
+```
+# xbps-install openjdk21 gradle kotlin-bin
+$ git clone https://github.com/bsoto-fc/voyager.git
+$ cd voyager/
+```
+
+- Android: `./gradlew :androidApp:assembleDebug`
+- Escritorio:
   - Hot reload: `./gradlew :desktopApp:hotRun --auto`
   - Standard run: `./gradlew :desktopApp:run`
-
-### Running tests
-
-Use the run button in your IDE's editor gutter, or run tests using Gradle tasks:
-
-- Android tests: `./gradlew :shared:testAndroidHostTest`
-- Desktop tests: `./gradlew :shared:jvmTest`
-
----
-
-Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html)…
