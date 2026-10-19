@@ -31,6 +31,7 @@ import java.sql.Connection
 import mx.unam.ciencias.myp.miner.Miner
 import mx.unam.ciencias.myp.miner.initializeDatabase
 import mx.unam.ciencias.myp.miner.MusicDbManager
+import mx.unam.ciencias.myp.miner.SongMetadata
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -41,12 +42,22 @@ fun mainScreen() {
 
     var existingDb by remember { mutableStateOf(false) }
 
-    var dbConnection: Connection? = null
+    var dbConnection by remember { mutableStateOf<Connection?>(null) }
+    var miner by remember { mutableStateOf<Miner?>(null) }
 
-    LaunchedEffect(existingDb) {
+    var currentFoundSong by remember { mutableStateOf<SongMetadata?>(null) }
+
+    LaunchedEffect(Unit) {
         val init = initializeDatabase()
         existingDb = !init.wasCreated
         dbConnection = init.connection
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            miner?.stop()
+            dbConnection?.close()
+        }
     }
 
     MaterialTheme {
@@ -76,17 +87,26 @@ fun mainScreen() {
                                          fileChooser.fileSelectionMode = JFileChooser.DIRECTORIES_ONLY
                                          fileChooser.showSaveDialog(null)
                                          selectedDirectory = fileChooser.getSelectedFile()?.toString()
-                                         if(selectedDirectory != null && dbConnection != null) {
-                                             val dbManager = MusicDbManager(dbConnection)
-                                             Miner(
+                                         val connection = dbConnection
+                                         if(selectedDirectory != null && connection != null) {
+                                             miner?.stop()
+                                             val dbManager = MusicDbManager(connection)
+                                             miner = Miner(
                                                  path = selectedDirectory.toString(),
                                                  onFound = { metadata ->
                                                      dbManager.saveSong(metadata)
+                                                     currentFoundSong = metadata
                                                      println("Se añadió: ${metadata.title} por ${metadata.artist}")
+                                                 },
+                                                 onFinish = { 
+                                                     addingDirectory = false
+                                                     currentFoundSong = null
                                                  }
-                                             ).recursiveMine()
+                                             ).also{
+                                                 it.recursiveMine()
+                                                 addingDirectory = true
+                                             }
                                          }
-                                         addingDirectory = true
                                      }) {
                     Icon(Icons.Default.Add, contentDescription = "Add")
                 }
@@ -104,7 +124,7 @@ fun mainScreen() {
                 ) {
 
                     buttonsLeftColumn(modifier = Modifier.weight(0.4f))
-                    libraryMiddleColumn(modifier = Modifier.weight(0.4f))
+                    libraryMiddleColumn(modifier = Modifier.weight(0.4f), currentFoundSong = currentFoundSong)
                     rightColumn(modifier = Modifier.weight(1f))
 
                 }
@@ -183,7 +203,8 @@ fun buttonsLeftColumn(
 
 @Composable
 fun libraryMiddleColumn(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    currentFoundSong: SongMetadata? = null
 ) {
     Column(
         modifier
@@ -191,12 +212,15 @@ fun libraryMiddleColumn(
             .padding(8.dp)
     ) {
         Text("Medio")
+        if(currentFoundSong != null) {
+            Text("Se encontró ${currentFoundSong.title} de ${currentFoundSong.artist}")
+        }
     }
 }
 
 @Composable
 fun rightColumn(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Column(
         modifier

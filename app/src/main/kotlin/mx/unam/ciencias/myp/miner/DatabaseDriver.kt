@@ -28,12 +28,10 @@ fun initializeDatabase(): DatabaseInit {
     val url = "jdbc:sqlite:$dbPath"
 
     val dbConnection = DriverManager.getConnection(url)
-    
-    dbConnection.use { connection ->
-        if(wasCreated) {
-            connection.createStatement().use { statement ->
-                statement.executeUpdate(
-                    """
+    if(wasCreated) {
+        dbConnection.createStatement().use { statement ->
+                                               statement.executeUpdate(
+                                                   """
                 CREATE TABLE types (
                   id_type       INTEGER PRIMARY KEY,
                   description   TEXT
@@ -94,12 +92,10 @@ fun initializeDatabase(): DatabaseInit {
                   FOREIGN KEY   (id_performer) REFERENCES performers(id_performer)
                   FOREIGN KEY   (id_album) REFERENCES albums(id_album)
                 );
-                    """.trimIndent()
-                )
-            }
+                                                   """.trimIndent()
+                                               )
         }
     }
-    
     return DatabaseInit(dbFile, wasCreated, dbConnection)
 }
 
@@ -161,15 +157,26 @@ class MusicDbManager(private val connection: Connection) {
     }
 
     private fun insertRola(meta: SongMetadata, performerId: Int, albumId: Int) {
+        val exists = connection.prepareStatement("SELECT 1 FROM rolas WHERE path = ?").use { stmt ->
+            stmt.setString(1, meta.path)
+            stmt.executeQuery().use { it.next() }
+        }
+        if(exists) {
+            val updateSql = "UPDATE rolas SET title = ?, id_performer = ?, id_album = ? WHERE path = ?"
+            connection.prepareStatement(updateSql).use { stmt ->
+                stmt.setString(1, meta.title)
+                stmt.setInt(2, performerId)
+                stmt.setInt(3, albumId)
+                stmt.setString(4, meta.path)
+                stmt.executeUpdate()
+            }
+            return
+        }
         val sql = """
-            INSERT INTO rolas (id_performer, id_album, path, title, track, year, genre) 
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT(path) DO UPDATE SET 
-                title=excluded.title, 
-                id_performer=excluded.id_performer, 
-                id_album=excluded.id_album
-        """.trimIndent()
-
+        INSERT INTO rolas (id_performer, id_album, path, title, track, year, genre) 
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+            """.trimIndent()
+        
         connection.prepareStatement(sql).use { stmt ->
             stmt.setInt(1, performerId)
             stmt.setInt(2, albumId)
@@ -186,5 +193,4 @@ class MusicDbManager(private val connection: Connection) {
             stmt.executeUpdate()
         }
     }
-
 }

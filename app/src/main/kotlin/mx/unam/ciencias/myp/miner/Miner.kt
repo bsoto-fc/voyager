@@ -9,6 +9,7 @@ import java.io.IOException
 class Miner(
     private val path: String,
     private val onFound: (SongMetadata) -> Unit,
+    private var onFinish: () -> Unit
 ) {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -40,13 +41,15 @@ class Miner(
                                 genre = tag.getFirst(FieldKey.GENRE) ?: "Unknown",
                                 path = it.absolutePath
                             )
-                            
+                            println("Se encontró $metadata.")
                             onFound(metadata)
                         } catch (e: IOException) {
                             // Disco duro lento, cd, etc (Encontrado al usar un directorio dentro de un iPod)
                             println("Error al obtener etiquetas: ${e.message}")
                         } 
                     }
+                onFinish()
+                println("Minero finalizó.")
             }
         }
     }
