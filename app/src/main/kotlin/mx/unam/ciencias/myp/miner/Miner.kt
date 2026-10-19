@@ -8,7 +8,7 @@ import java.io.IOException
 
 class Miner(
     private val path: String,
-    private val onFound: (String) -> Unit,
+    private val onFound: (SongMetadata) -> Unit,
 ) {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -31,18 +31,21 @@ class Miner(
                             val audioFile = AudioFileIO.read(it)
                             val tag = audioFile.tag
                             
-                            println("Title:  ${tag.getFirst(FieldKey.TITLE)}")
-                            println("Artist: ${tag.getFirst(FieldKey.ARTIST)}")
-                            println("Album:  ${tag.getFirst(FieldKey.ALBUM)}")
-                            println("Track:  ${tag.getFirst(FieldKey.TRACK)}")
+                            val metadata = SongMetadata(
+                                title = tag.getFirst(FieldKey.TITLE) ?: "Unknown",
+                                artist = tag.getFirst(FieldKey.ARTIST) ?: "Unknown",
+                                album = tag.getFirst(FieldKey.ALBUM) ?: "Unknown",
+                                track = tag.getFirst(FieldKey.TRACK)?.toIntOrNull(),
+                                year = tag.getFirst(FieldKey.YEAR)?.toIntOrNull(),
+                                genre = tag.getFirst(FieldKey.GENRE) ?: "Unknown",
+                                path = it.absolutePath
+                            )
                             
-                            onFound(tag.getFirst(FieldKey.TITLE))
+                            onFound(metadata)
                         } catch (e: IOException) {
                             // Disco duro lento, cd, etc (Encontrado al usar un directorio dentro de un iPod)
                             println("Error al obtener etiquetas: ${e.message}")
-                        } finally {
-                            processingJob?.join()
-                        }
+                        } 
                     }
             }
         }

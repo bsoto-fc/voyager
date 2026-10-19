@@ -26,8 +26,11 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.material.icons.filled.*
 
 import javax.swing.*
+import java.sql.Connection
 
 import mx.unam.ciencias.myp.miner.Miner
+import mx.unam.ciencias.myp.miner.initializeDatabase
+import mx.unam.ciencias.myp.miner.MusicDbManager
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -38,12 +41,29 @@ fun mainScreen() {
 
     var existingDb by remember { mutableStateOf(false) }
 
+    var databaseConnection by remember { mutableStateOf<Connection?>(null) }
+
+    LaunchedEffect(existingDb) {
+        val init = initializeDatabase()
+        existingDb = !init.wasCreated
+        databaseConnection = init.connection
+    }
+
     MaterialTheme {
         Scaffold(
             topBar = {
                 TopAppBar(
                     title = {
                         Text("Voyager")
+                    },
+                    actions = {
+                        IconButton(onClick = {
+                                   }) {
+                            Icon(
+                                imageVector = Icons.Filled.Star,
+                                contentDescription = "Dark Mode"
+                            )
+                        }
                     }
                 )
             },
@@ -57,10 +77,12 @@ fun mainScreen() {
                                          fileChooser.showSaveDialog(null)
                                          selectedDirectory = fileChooser.getSelectedFile()?.toString()
                                          if(selectedDirectory != null) {
+                                             val dbManager = MusicDbManager(dbConnection)
                                              Miner(
                                                  path = selectedDirectory.toString(),
-                                                 onFound = { title ->
-                                                     
+                                                 onFound = { metadata ->
+                                                     dbManager.saveSong(metadata)
+                                                     println("Se añadió: ${metadata.title} por ${metadata.artist}")
                                                  }
                                              ).recursiveMine()
                                          }
