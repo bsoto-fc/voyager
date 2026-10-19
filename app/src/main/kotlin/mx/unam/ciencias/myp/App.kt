@@ -19,6 +19,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
+import javax.swing.*
+
+import mx.unam.ciencias.myp.miner.Miner
 
 fun main() = application {
     Window(onCloseRequest = ::exitApplication, title = "Voyager") {
@@ -30,6 +33,7 @@ fun main() = application {
 fun mainScreen() {
     
     var addingDirectory by remember { mutableStateOf(false) }
+    var selectedDirectory by remember { mutableStateOf<String?>(null) }
     
     MaterialTheme {
         Scaffold(
@@ -43,6 +47,14 @@ fun mainScreen() {
             floatingActionButton = {
                 FloatingActionButton(onClick = {
                                          println("Pressed Button")
+                                         // https://github.com/JetBrains/compose-multiplatform/issues/176
+                                         UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
+                                         val fileChooser = JFileChooser()
+                                         fileChooser.fileSelectionMode = JFileChooser.DIRECTORIES_ONLY
+                                         fileChooser.showSaveDialog(null)
+                                         selectedDirectory = fileChooser.getSelectedFile()?.toString()
+                                         if(selectedDirectory != null)
+                                             Miner(selectedDirectory.toString()).recursiveMine()
                                          addingDirectory = true
                                      }) {
                     Icon(Icons.Default.Add, contentDescription = "Add")
@@ -61,3 +73,4 @@ fun mainScreen() {
         }
     }
 }
+

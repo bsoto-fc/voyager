@@ -32,6 +32,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.11.0")
     implementation("org.jetbrains.compose.material:material-icons-core:1.7.3")
+    implementation("net.jthink:jaudiotagger:3.0.1")
 }
 
 testing {
