@@ -41,12 +41,12 @@ fun mainScreen() {
 
     var existingDb by remember { mutableStateOf(false) }
 
-    var databaseConnection by remember { mutableStateOf<Connection?>(null) }
+    var dbConnection: Connection? = null
 
     LaunchedEffect(existingDb) {
         val init = initializeDatabase()
         existingDb = !init.wasCreated
-        databaseConnection = init.connection
+        dbConnection = init.connection
     }
 
     MaterialTheme {
@@ -76,7 +76,7 @@ fun mainScreen() {
                                          fileChooser.fileSelectionMode = JFileChooser.DIRECTORIES_ONLY
                                          fileChooser.showSaveDialog(null)
                                          selectedDirectory = fileChooser.getSelectedFile()?.toString()
-                                         if(selectedDirectory != null) {
+                                         if(selectedDirectory != null && dbConnection != null) {
                                              val dbManager = MusicDbManager(dbConnection)
                                              Miner(
                                                  path = selectedDirectory.toString(),
