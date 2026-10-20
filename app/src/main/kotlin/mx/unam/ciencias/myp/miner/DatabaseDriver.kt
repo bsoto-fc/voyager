@@ -2,6 +2,7 @@ package mx.unam.ciencias.myp.miner
 
 import java.nio.file.Files
 import java.nio.file.Path
+import java.io.File
 import java.sql.DriverManager
 import java.sql.Connection
 import java.sql.Types.INTEGER
@@ -15,6 +16,29 @@ data class DatabaseInit(
     val wasCreated: Boolean,
     val connection: Connection
 )
+
+
+/*
+ * Elementos requeridos para interfaz gráfica.
+ */
+data class ArtistRow(
+    val id: Int,
+    val name: String
+)
+
+data class AlbumRow(
+    val id: Int,
+    val name: String,
+    val year: Int?
+)
+
+data class SongRow(
+    val id: Int,
+    val title: String,
+    val track: Int?,
+    val path: String
+)
+ 
 
 fun initializeDatabase(): DatabaseInit {
     val dbFile = Path.of(System.getProperty("user.home"), ".local", "share", "voyager", "songlibrary.db") // XDG_DATA_HOME
@@ -104,7 +128,8 @@ class MusicDbManager(private val connection: Connection) {
     fun saveSong(meta: SongMetadata) {
         // Etiquetas no diferencían entre persona y grupo
         val performerId = getOrCreatePerformer(meta.artist, Types.TYPE_UNKNOWN)
-        val albumId = getOrCreateAlbum(meta.album, meta.path, meta.year)
+        val albumDir = File(meta.path).parentFile
+        val albumId = getOrCreateAlbum(albumDir?.name ?: "Unknown", albumDir?.path ?: "", meta.year)
         insertRola(meta, performerId, albumId)
     }
 
@@ -191,6 +216,58 @@ class MusicDbManager(private val connection: Connection) {
                 stmt.setNull(6, INTEGER)
             stmt.setString(7, meta.genre)
             stmt.executeUpdate()
+        }
+    }
+
+    fun getArtists(): List<ArtistRow> {
+        val sql = "SELECT id_performer, name FROM performers ORDER BY name COLLATE NOCASE"
+        return connection.prepareStatement(sql).use { stmt ->
+            stmt.executeQuery().use { rs ->
+                buildList {
+                    while (rs.next())
+                        add(ArtistRow(rs.getInt("id_performer"), rs.getString("name")))
+                }
+            }
+        }
+    }
+    
+    fun getAlbumsOf(performerId: Int): List<AlbumRow> {
+        val sql = """
+        SELECT DISTINCT a.id_album, a.name, a.year
+        FROM albums a JOIN rolas r ON r.id_album = a.id_album
+        WHERE r.id_performer = ?
+        ORDER BY a.year, a.name COLLATE NOCASE
+            """.trimIndent()
+        return connection.prepareStatement(sql).use { stmt ->
+            stmt.setInt(1, performerId)
+            stmt.executeQuery().use { rs ->
+                buildList {
+                    while (rs.next()) {
+                        val year = rs.getInt("year").takeIf { !rs.wasNull() && it != 0 }
+                        add(AlbumRow(rs.getInt("id_album"), rs.getString("name"), year))
+                    }
+                }
+            }
+        }
+    }
+    
+    fun getSongsOf(performerId: Int, albumId: Int): List<SongRow> {
+        val sql = """
+        SELECT id_rola, title, track, path FROM rolas
+        WHERE id_performer = ? AND id_album = ?
+        ORDER BY track, title COLLATE NOCASE
+            """.trimIndent()
+        return connection.prepareStatement(sql).use { stmt ->
+            stmt.setInt(1, performerId)
+            stmt.setInt(2, albumId)
+            stmt.executeQuery().use { rs ->
+                buildList {
+                    while (rs.next()) {
+                        val track = rs.getInt("track").takeIf { !rs.wasNull() }
+                        add(SongRow(rs.getInt("id_rola"), rs.getString("title"), track, rs.getString("path")))
+                    }
+                }
+            }
         }
     }
 }
