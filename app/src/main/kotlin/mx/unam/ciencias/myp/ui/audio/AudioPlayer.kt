@@ -23,9 +23,9 @@ import kotlinx.coroutines.withContext
 
 @Composable
 fun AudioPlayerUI(
-    mp3Path: String
+    mp3Path: String,
+    player: GadulkaPlayer
 ) {
-    val player = rememberGadulkaState()
     Row(
         verticalAlignment = Alignment.CenterVertically,
     ) {

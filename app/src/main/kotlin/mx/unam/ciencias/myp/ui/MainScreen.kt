@@ -37,6 +37,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
+import androidx.compose.material.icons.filled.PlayArrow
 import org.jetbrains.skia.Image as SkiaImage
 
 import kotlinx.coroutines.Dispatchers
@@ -48,6 +49,8 @@ import java.io.File
 
 import javax.swing.*
 import java.sql.Connection
+
+import eu.iamkonstantin.kotlin.gadulka.*
 
 import mx.unam.ciencias.myp.miner.Miner
 import mx.unam.ciencias.myp.miner.DirConstants
@@ -76,6 +79,10 @@ fun mainScreen() {
     val dbManager = remember(dbConnection) { dbConnection?.let { MusicDbManager(it) } }
 
     var playingSongPath by remember { mutableStateOf<String?>(null) }
+
+    var isPlayerSelected by remember { mutableStateOf(false) }
+
+    val player = rememberGadulkaState()
 
     LaunchedEffect(Unit) {
         val init = initializeDatabase()
@@ -152,7 +159,10 @@ fun mainScreen() {
                         .fillMaxHeight()
                 ) {
 
-                    buttonsLeftColumn(modifier = Modifier.weight(0.4f))
+                    buttonsLeftColumn(
+                        modifier = Modifier.weight(0.4f),
+                        onAudioPlayerSelect = { isPlayerSelected = !isPlayerSelected }
+                    )
                     libraryMiddleColumn(
                         modifier = Modifier.weight(0.4f),
                         currentFoundSong = currentFoundSong,
@@ -164,7 +174,9 @@ fun mainScreen() {
                     rightColumn(
                         modifier = Modifier.weight(1f),
                         dbManager = dbManager,
-                        playingSongPath = playingSongPath
+                        playingSongPath = playingSongPath,
+                        isPlayerSelected = isPlayerSelected,
+                        player = player
                     )
                 }
             }
@@ -174,7 +186,8 @@ fun mainScreen() {
 
 @Composable
 fun buttonsLeftColumn(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onAudioPlayerSelect: () -> Unit
 ) {
     Column(
         modifier
@@ -200,6 +213,34 @@ fun buttonsLeftColumn(
                 )
                 Text(
                     "Información",
+                    style = TextStyle(fontWeight = FontWeight.Bold),
+                    textAlign = TextAlign.Center,
+                    fontSize = 10.sp
+                )
+                
+            }
+        }
+
+        Spacer(modifier = Modifier.height(5.dp))
+
+        Button(
+            colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
+            onClick = {
+                onAudioPlayerSelect()
+            },
+            shape = RoundedCornerShape(8.dp)
+        ) {
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.PlayArrow,
+                    contentDescription = "Reproductor"
+                )
+                Text(
+                    "Reproductor",
                     style = TextStyle(fontWeight = FontWeight.Bold),
                     textAlign = TextAlign.Center,
                     fontSize = 10.sp
@@ -372,15 +413,20 @@ private fun expandableRow(
 fun rightColumn(
     modifier: Modifier = Modifier,
     playingSongPath: String? = null,
-    dbManager: MusicDbManager? = null
+    dbManager: MusicDbManager? = null,
+    isPlayerSelected: Boolean = false ,
+    player: GadulkaPlayer? = null
 ) {
     Column(
         modifier
             .fillMaxWidth()
             .padding(8.dp)
     ) {
-        if(playingSongPath != null) {
-            AudioPlayerUI(mp3Path = playingSongPath)
+        if(isPlayerSelected && playingSongPath != null && player!=null) {
+            AudioPlayerUI(
+                mp3Path = playingSongPath,
+                player = player
+            )
         } else {
             var albums by remember { mutableStateOf<List<AlbumRow>>(emptyList()) }
 
