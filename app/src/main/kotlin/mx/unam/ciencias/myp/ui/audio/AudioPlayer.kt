@@ -11,29 +11,21 @@ import eu.iamkonstantin.kotlin.gadulka.*
 
 @Composable
 fun AudioPlayerUI(
-    mp3Path: String,
-    modifier: Modifier = Modifier
+    mp3Path: String
 ) {
     val player = rememberGadulkaState()
-
-    Column(
-        modifier
-            .fillMaxWidth()
-            .padding(8.dp)
-    ) {
-        Row {
-            Button(
-                onClick = {
-                    player.play(File(mp3Path).toURI().toString())
-                }) {
-                Text("Play")
-            }
-            Button(
-                onClick = {
-                    player.stop()
-                }) {
-                Text("Stop")
-            }
+    Row {
+        Button(
+            onClick = {
+                player.play(File(mp3Path).toURI().toString())
+            }) {
+            Text("Play")
+        }
+        Button(
+            onClick = {
+                player.stop()
+            }) {
+            Text("Stop")
         }
     }
 }

@@ -1,7 +1,7 @@
 package mx.unam.ciencias.myp.ui
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.Image
+import androidx.compose.foundation.Image as ComposeImage
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.safeContentPadding
@@ -26,16 +26,18 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.runtime.produceState
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.foundation.Image
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
-import org.jetbrains.skia.Image
+import org.jetbrains.skia.Image as SkiaImage
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -159,15 +161,11 @@ fun mainScreen() {
                             playingSongPath = path
                         }
                     )
-                    if(playingSongPath != null) {
-                        AudioPlayerUI(
-                            mp3Path = playingSongPath.toString(),
-                            modifier = Modifier.weight(0.6f)
-                        )
-                    } else {
-                        rightColumn(modifier = Modifier.weight(1f))
-                    }
-
+                    rightColumn(
+                        modifier = Modifier.weight(1f),
+                        dbManager = dbManager,
+                        playingSongPath = playingSongPath
+                    )
                 }
             }
         }
@@ -348,14 +346,14 @@ private fun expandableRow(
             ) {
                 value = withContext(Dispatchers.IO) {
                     runCatching {
-                        Image.makeFromEncoded(File(albumCoverPath).readBytes())
+                        SkiaImage.makeFromEncoded(File(albumCoverPath).readBytes())
                             .toComposeImageBitmap()
                     }.getOrNull()
                 }
             }.value
             
             artwork?.let {
-                Image(
+                ComposeImage(
                     bitmap = it,
                     modifier = Modifier.size(24.dp),
                     contentDescription = if (expanded) "Contraer" else "Expandir"
@@ -375,13 +373,56 @@ private fun expandableRow(
 @Composable
 fun rightColumn(
     modifier: Modifier = Modifier,
+    playingSongPath: String? = null,
+    dbManager: MusicDbManager? = null
 ) {
     Column(
         modifier
             .fillMaxWidth()
             .padding(8.dp)
     ) {
-        Text("Resto")
+        if(playingSongPath != null) {
+            AudioPlayerUI(mp3Path = playingSongPath)
+        } else {
+            var albums by remember { mutableStateOf<List<AlbumRow>>(emptyList()) }
+
+            LaunchedEffect(dbManager) {
+                if(dbManager != null){
+                    albums = withContext(Dispatchers.IO) { dbManager.getAllAlbums() }
+                }
+            }
+
+            LazyVerticalGrid(
+                columns = GridCells.Adaptive(minSize = 128.dp),
+                // https://stackoverflow.com/questions/68610360/how-to-add-space-between-grid-items-in-jetpack-compose
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                items(albums) { album ->
+                    val artworkName = "${album.path}".hashCode().toString() + ".jpg"
+                    val artworkPath = Path.of(DirConstants.ARTWORK_CACHE_DIR.toAbsolutePath().toString(), artworkName).toString()
+
+                    val artwork = produceState<ImageBitmap?>(
+                        initialValue = null,
+                        key1 = artworkPath
+                    ) {
+                        value = withContext(Dispatchers.IO) {
+                            runCatching {
+                                SkiaImage.makeFromEncoded(File(artworkPath).readBytes())
+                                    .toComposeImageBitmap()
+                            }.getOrNull()
+                        }
+                    }.value
+                
+                    artwork?.let {
+                        ComposeImage(
+                            bitmap = it,
+                            contentDescription = album.name
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 

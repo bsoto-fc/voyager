@@ -271,4 +271,18 @@ class MusicDbManager(private val connection: Connection) {
             }
         }
     }
+    
+    fun getAllAlbums(): List<AlbumRow> {
+        val sql = "SELECT id_album, name, year, path FROM albums ORDER BY name COLLATE NOCASE"
+        return connection.prepareStatement(sql).use { stmt ->
+            stmt.executeQuery().use { rs ->
+                buildList {
+                    while (rs.next()) {
+                        val year = rs.getInt("year").takeIf { !rs.wasNull() && it != 0 }
+                        add(AlbumRow(rs.getInt("id_album"), rs.getString("name"), year, rs.getString("path")))
+                    }
+                }
+            }
+        }
+    }
 }
