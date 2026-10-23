@@ -32,13 +32,23 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.runtime.produceState
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.foundation.Image
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.toComposeImageBitmap
+import org.jetbrains.skia.Image
+
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+
+import java.text.Normalizer
+import java.nio.file.Path
+import java.io.File
 
 import javax.swing.*
 import java.sql.Connection
 
 import mx.unam.ciencias.myp.miner.Miner
+import mx.unam.ciencias.myp.miner.DirConstants
 import mx.unam.ciencias.myp.miner.initializeDatabase
 import mx.unam.ciencias.myp.miner.MusicDbManager
 import mx.unam.ciencias.myp.miner.SongMetadata
@@ -280,10 +290,16 @@ fun libraryMiddleColumn(
                     albums.forEach { album ->
                         val albumExpanded = expandedAlbumId == album.id
                         
+                        val artworkName = "${album.path}".hashCode().toString() + ".jpg"
+                        println("Searching for $artworkName")
+                        val artworkPath = Path.of(DirConstants.ARTWORK_CACHE_DIR.toAbsolutePath().toString(), artworkName).toString()
+                        
                         expandableRow(
                             text = album.name + (album.year?.let { " ($it)" } ?: ""),
                             expanded = albumExpanded,
                             indent = 16.dp,
+                            isAlbum = true,
+                            albumCoverPath = artworkPath,
                             onClick = { expandedAlbumId = if (albumExpanded) null else album.id }
                         )
                         
@@ -314,6 +330,8 @@ private fun expandableRow(
     text: String,
     expanded: Boolean,
     indent: Dp,
+    isAlbum: Boolean = false,
+    albumCoverPath: String? = null,
     onClick: () -> Unit
 ) {
     Row(
@@ -323,6 +341,28 @@ private fun expandableRow(
             .padding(start = indent, top = 6.dp, bottom = 6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        if(isAlbum && albumCoverPath != null) {
+            val artwork = produceState<ImageBitmap?>(
+                initialValue = null,
+                key1 = albumCoverPath
+            ) {
+                value = withContext(Dispatchers.IO) {
+                    runCatching {
+                        Image.makeFromEncoded(File(albumCoverPath).readBytes())
+                            .toComposeImageBitmap()
+                    }.getOrNull()
+                }
+            }.value
+            
+            artwork?.let {
+                Image(
+                    bitmap = it,
+                    modifier = Modifier.size(24.dp),
+                    contentDescription = if (expanded) "Contraer" else "Expandir"
+                )
+            }
+            Spacer(Modifier.width(8.dp))
+        }
         Icon(
             imageVector = if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
             contentDescription = if (expanded) "Contraer" else "Expandir"

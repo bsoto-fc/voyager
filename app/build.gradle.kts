@@ -36,17 +36,7 @@ dependencies {
     implementation("org.xerial:sqlite-jdbc:3.53.4.0")
     implementation("eu.iamkonstantin.kotlin:gadulka:1.14.0")
     listOf("base", "graphics", "controls", "swing", "web", "media").forEach {
-        implementation("org.openjfx:javafx-$it:23:${javaFxClassifier()}")
-    }
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.11.0")}
-
-fun javaFxClassifier(): String {
-    val os = System.getProperty("os.name").lowercase()
-    val arm = System.getProperty("os.arch").let { it == "aarch64" || it == "arm64" }
-    return when {
-        os.contains("win") -> "win"
-        os.contains("mac") -> if (arm) "mac-aarch64" else "mac"
-        else -> if (arm) "linux-aarch64" else "linux"
+        implementation("org.openjfx:javafx-$it:23:linux")
     }
 }
 

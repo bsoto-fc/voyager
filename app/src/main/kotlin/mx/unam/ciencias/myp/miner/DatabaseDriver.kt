@@ -29,7 +29,8 @@ data class ArtistRow(
 data class AlbumRow(
     val id: Int,
     val name: String,
-    val year: Int?
+    val year: Int?,
+    val path: String
 )
 
 data class SongRow(
@@ -233,7 +234,7 @@ class MusicDbManager(private val connection: Connection) {
     
     fun getAlbumsOf(performerId: Int): List<AlbumRow> {
         val sql = """
-        SELECT DISTINCT a.id_album, a.name, a.year
+        SELECT DISTINCT a.id_album, a.name, a.year, a.path
         FROM albums a JOIN rolas r ON r.id_album = a.id_album
         WHERE r.id_performer = ?
         ORDER BY a.year, a.name COLLATE NOCASE
@@ -244,7 +245,7 @@ class MusicDbManager(private val connection: Connection) {
                 buildList {
                     while (rs.next()) {
                         val year = rs.getInt("year").takeIf { !rs.wasNull() && it != 0 }
-                        add(AlbumRow(rs.getInt("id_album"), rs.getString("name"), year))
+                        add(AlbumRow(rs.getInt("id_album"), rs.getString("name"), year, rs.getString("path")))
                     }
                 }
             }
