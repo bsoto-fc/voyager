@@ -181,8 +181,6 @@ fun buttonsLeftColumn(
             .fillMaxWidth()
             .padding(8.dp)
     ) {
-        Text("Pequeño")
-
         // https://www.geeksforgeeks.org/kotlin/android-jetpack-compose-button-with-icon-and-text/
         Button(
             colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
