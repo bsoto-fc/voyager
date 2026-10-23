@@ -45,6 +45,7 @@ import mx.unam.ciencias.myp.miner.SongMetadata
 import mx.unam.ciencias.myp.miner.ArtistRow
 import mx.unam.ciencias.myp.miner.AlbumRow
 import mx.unam.ciencias.myp.miner.SongRow
+import mx.unam.ciencias.myp.ui.audio.AudioPlayerUI
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -61,6 +62,8 @@ fun mainScreen() {
     var currentFoundSong by remember { mutableStateOf<SongMetadata?>(null) }
 
     val dbManager = remember(dbConnection) { dbConnection?.let { MusicDbManager(it) } }
+
+    var playingSongPath by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) {
         val init = initializeDatabase()
@@ -141,9 +144,19 @@ fun mainScreen() {
                     libraryMiddleColumn(
                         modifier = Modifier.weight(0.4f),
                         currentFoundSong = currentFoundSong,
-                        dbManager = dbManager
+                        dbManager = dbManager,
+                        onSongSelect = { path ->
+                            playingSongPath = path
+                        }
                     )
-                    rightColumn(modifier = Modifier.weight(1f))
+                    if(playingSongPath != null) {
+                        AudioPlayerUI(
+                            mp3Path = playingSongPath.toString(),
+                            modifier = Modifier.weight(0.6f)
+                        )
+                    } else {
+                        rightColumn(modifier = Modifier.weight(1f))
+                    }
 
                 }
             }
@@ -223,7 +236,8 @@ fun buttonsLeftColumn(
 fun libraryMiddleColumn(
     modifier: Modifier = Modifier,
     currentFoundSong: SongMetadata? = null,
-    dbManager: MusicDbManager? = null
+    dbManager: MusicDbManager? = null,
+    onSongSelect: (String) -> Unit 
 ) {
 
     var artists by remember { mutableStateOf<List<ArtistRow>>(emptyList()) }
@@ -283,7 +297,7 @@ fun libraryMiddleColumn(
                                     text = (song.track?.let { "$it. " } ?: "") + song.title,
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .clickable {  }
+                                        .clickable { onSongSelect(song.path) }
                                         .padding(start = 40.dp, top = 4.dp, bottom = 4.dp)
                                 )
                             }

@@ -3,6 +3,7 @@ package mx.unam.ciencias.myp.miner
 import java.io.File
 import org.jaudiotagger.tag.FieldKey
 import org.jaudiotagger.audio.AudioFileIO
+import org.jaudiotagger.tag.images.Artwork
 import kotlinx.coroutines.*
 import java.io.IOException
 
