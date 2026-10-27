@@ -262,9 +262,13 @@ private fun expandableRow(
                 ComposeImage(
                     bitmap = it,
                     modifier = Modifier.size(24.dp),
-                    contentDescription = if (expanded) "Contraer" else "Expandir"
+                    contentDescription = albumCoverPath
                 )
-            }
+            } ?: Icon(
+                imageVector = Icons.Filled.PlayArrow,
+                modifier = Modifier.size(24.dp),
+                contentDescription = albumCoverPath
+            )
             Spacer(Modifier.width(8.dp))
         }
         Icon(
