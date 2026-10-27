@@ -140,3 +140,26 @@ data class Rola(
         }
     }
 }
+
+/*
+ * Elementos requeridos para interfaz gráfica.
+ */
+data class ArtistRow(
+    val id: Int,
+    val name: String
+)
+
+data class AlbumRow(
+    val id: Int,
+    val name: String,
+    val year: Int?,
+    val path: String
+)
+
+data class SongRow(
+    val id: Int,
+    val title: String,
+    val track: Int?,
+    val path: String
+)
+ 

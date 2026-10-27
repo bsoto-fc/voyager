@@ -10,36 +10,14 @@ import java.sql.Statement.RETURN_GENERATED_KEYS
 
 import mx.unam.ciencias.myp.db.Types
 import mx.unam.ciencias.myp.db.Rola
+import mx.unam.ciencias.myp.db.ArtistRow
+import mx.unam.ciencias.myp.db.AlbumRow
 
 data class DatabaseInit(
     val path: Path,
     val wasCreated: Boolean,
     val connection: Connection
 )
-
-
-/*
- * Elementos requeridos para interfaz gráfica.
- */
-data class ArtistRow(
-    val id: Int,
-    val name: String
-)
-
-data class AlbumRow(
-    val id: Int,
-    val name: String,
-    val year: Int?,
-    val path: String
-)
-
-data class SongRow(
-    val id: Int,
-    val title: String,
-    val track: Int?,
-    val path: String
-)
- 
 
 fun initializeDatabase(): DatabaseInit {
     val dbFile = Path.of(System.getProperty("user.home"), ".local", "share", "voyager", "songlibrary.db") // XDG_DATA_HOME
@@ -252,9 +230,9 @@ class MusicDbManager(private val connection: Connection) {
         }
     }
     
-    fun getSongsOf(performerId: Int, albumId: Int): List<SongRow> {
+    fun getSongsOf(performerId: Int, albumId: Int): List<Rola> {
         val sql = """
-        SELECT id_rola, title, track, path FROM rolas
+        SELECT * FROM rolas
         WHERE id_performer = ? AND id_album = ?
         ORDER BY track, title COLLATE NOCASE
             """.trimIndent()
@@ -264,8 +242,7 @@ class MusicDbManager(private val connection: Connection) {
             stmt.executeQuery().use { rs ->
                 buildList {
                     while (rs.next()) {
-                        val track = rs.getInt("track").takeIf { !rs.wasNull() }
-                        add(SongRow(rs.getInt("id_rola"), rs.getString("title"), track, rs.getString("path")))
+                        add(Rola.fromSqlResult(rs))
                     }
                 }
             }

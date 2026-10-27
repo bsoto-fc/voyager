@@ -44,10 +44,11 @@ import mx.unam.ciencias.myp.miner.Miner
 import mx.unam.ciencias.myp.miner.DirConstants
 import mx.unam.ciencias.myp.miner.MusicDbManager
 import mx.unam.ciencias.myp.miner.SongMetadata
-import mx.unam.ciencias.myp.miner.ArtistRow
-import mx.unam.ciencias.myp.miner.AlbumRow
-import mx.unam.ciencias.myp.miner.SongRow
+import mx.unam.ciencias.myp.db.ArtistRow
+import mx.unam.ciencias.myp.db.AlbumRow
+import mx.unam.ciencias.myp.db.Rola
 import mx.unam.ciencias.myp.ui.audio.AudioPlayerUI
+
 
 @Composable
 fun buttonsLeftColumn(
@@ -149,7 +150,7 @@ fun libraryMiddleColumn(
     modifier: Modifier = Modifier,
     currentFoundSong: SongMetadata? = null,
     dbManager: MusicDbManager? = null,
-    onSongSelect: (String) -> Unit 
+    onSongSelect: (Rola) -> Unit 
 ) {
 
     var artists by remember { mutableStateOf<List<ArtistRow>>(emptyList()) }
@@ -206,16 +207,16 @@ fun libraryMiddleColumn(
                         )
                         
                         if (albumExpanded) {
-                            val songs by produceState(emptyList<SongRow>(), artist.id, album.id, currentFoundSong) {
+                            val songs by produceState(emptyList<Rola>(), artist.id, album.id, currentFoundSong) {
                                 value = withContext(Dispatchers.IO) { dbManager.getSongsOf(artist.id, album.id) }
                             }
                             
                             songs.forEach { song ->
                                 Text(
-                                    text = (song.track?.let { "$it. " } ?: "") + song.title,
+                                    text = (song.track.let { "$it. " }) + song.title,
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .clickable { onSongSelect(song.path) }
+                                        .clickable { onSongSelect(song) }
                                         .padding(start = 40.dp, top = 4.dp, bottom = 4.dp)
                                 )
                             }
@@ -277,7 +278,7 @@ private fun expandableRow(
 @Composable
 fun rightColumn(
     modifier: Modifier = Modifier,
-    playingSongPath: String? = null,
+    playingSong: Rola? = null,
     dbManager: MusicDbManager? = null,
     isPlayerSelected: Boolean = false ,
     player: GadulkaPlayer? = null
@@ -289,9 +290,9 @@ fun rightColumn(
             .padding(8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        if(isPlayerSelected && playingSongPath != null && player!=null) {
+        if(isPlayerSelected && playingSong != null && player!=null) {
             AudioPlayerUI(
-                mp3Path = playingSongPath,
+                mp3Path = playingSong.path,
                 player = player
             )
         } else {

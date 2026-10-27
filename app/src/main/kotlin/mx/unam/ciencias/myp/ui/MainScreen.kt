@@ -44,9 +44,9 @@ import mx.unam.ciencias.myp.miner.DirConstants
 import mx.unam.ciencias.myp.miner.initializeDatabase
 import mx.unam.ciencias.myp.miner.MusicDbManager
 import mx.unam.ciencias.myp.miner.SongMetadata
-import mx.unam.ciencias.myp.miner.ArtistRow
-import mx.unam.ciencias.myp.miner.AlbumRow
-import mx.unam.ciencias.myp.miner.SongRow
+import mx.unam.ciencias.myp.db.ArtistRow
+import mx.unam.ciencias.myp.db.AlbumRow
+import mx.unam.ciencias.myp.db.Rola
 import mx.unam.ciencias.myp.ui.audio.AudioPlayerUI
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -65,7 +65,7 @@ fun mainScreen() {
 
     val dbManager = remember(dbConnection) { dbConnection?.let { MusicDbManager(it) } }
 
-    var playingSongPath by remember { mutableStateOf<String?>(null) }
+    var playingSong by remember { mutableStateOf<Rola?>(null) }
 
     var isPlayerSelected by remember { mutableStateOf(true) }
 
@@ -154,14 +154,14 @@ fun mainScreen() {
                         modifier = Modifier.weight(0.4f),
                         currentFoundSong = currentFoundSong,
                         dbManager = dbManager,
-                        onSongSelect = { path ->
-                            playingSongPath = path
+                        onSongSelect = { song ->
+                            playingSong = song
                         }
                     )
                     rightColumn(
                         modifier = Modifier.weight(1f),
                         dbManager = dbManager,
-                        playingSongPath = playingSongPath,
+                        playingSong = playingSong,
                         isPlayerSelected = isPlayerSelected,
                         player = player
                     )
