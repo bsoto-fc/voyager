@@ -29,6 +29,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import org.jetbrains.skia.Image as SkiaImage
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.border
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -298,6 +299,8 @@ fun rightColumn(
         } else {
             var albums by remember { mutableStateOf<List<AlbumRow>>(emptyList()) }
 
+            val albumArtworkSize = 135.dp
+
             LaunchedEffect(dbManager) {
                 if(dbManager != null){
                     albums = withContext(Dispatchers.IO) { dbManager.getAllAlbums() }
@@ -329,9 +332,34 @@ fun rightColumn(
                     artwork?.let {
                         ComposeImage(
                             bitmap = it,
-                            contentDescription = album.name
+                            contentDescription = album.name,
+                            modifier = Modifier.size(albumArtworkSize),
                         )
-                    }
+                    } ?: Box(
+                        modifier = Modifier.size(albumArtworkSize).border(1.dp, Color.Black),
+                        content = {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .fillMaxHeight()
+                                    .padding(16.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.PlayArrow,
+                                    contentDescription = album.name + (album.year?.let { " - $it" })
+                                )
+                                Text(
+                                    text = album.name + (album.year?.let { " - $it" }),
+                                    style = TextStyle(fontWeight = FontWeight.Bold),
+                                    textAlign = TextAlign.Center,
+                                    fontSize = 10.sp
+                                )
+                                
+                            }
+                        }
+                    )
                 }
             }
         }
