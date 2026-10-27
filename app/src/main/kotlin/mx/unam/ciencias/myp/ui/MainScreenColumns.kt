@@ -293,7 +293,7 @@ fun rightColumn(
     ) {
         if(isPlayerSelected && playingSong != null && player!=null) {
             AudioPlayerUI(
-                mp3Path = playingSong.path,
+                song = playingSong,
                 player = player
             )
         } else {

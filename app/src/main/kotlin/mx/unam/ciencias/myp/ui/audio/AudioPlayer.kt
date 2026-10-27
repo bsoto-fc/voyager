@@ -8,69 +8,94 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.Alignment
 import androidx.compose.foundation.Image as ComposeImage
-import org.jetbrains.skia.Image as SkiaImage
 import androidx.compose.runtime.produceState
-import java.io.File
-import java.nio.file.Path
-import eu.iamkonstantin.kotlin.gadulka.*
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.sp
+import org.jetbrains.skia.Image as SkiaImage
+
+import eu.iamkonstantin.kotlin.gadulka.*
+
+import java.io.File
+import java.nio.file.Path
 
 import mx.unam.ciencias.myp.miner.DirConstants
+import mx.unam.ciencias.myp.db.Rola
 
 import kotlinx.coroutines.*
 
 @Composable
 fun AudioPlayerUI(
-    mp3Path: String,
+    song: Rola,
     player: GadulkaPlayer
 ) {
 
+    val mp3Path = song.path
+    
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp)
     ) {
-        val artworkName = "${File(mp3Path).parent}".hashCode().toString() + ".jpg"
-        val artworkPath = Path.of(DirConstants.ARTWORK_CACHE_DIR.toAbsolutePath().toString(), artworkName).toString()
-        
-        val artwork = produceState<ImageBitmap?>(
-            initialValue = null,
-            key1 = artworkPath
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            value = withContext(Dispatchers.IO) {
-                runCatching {
-                    SkiaImage.makeFromEncoded(File(artworkPath).readBytes())
-                        .toComposeImageBitmap()
-                }.getOrNull()
+            val artworkName = "${File(mp3Path).parent}".hashCode().toString() + ".jpg"
+            val artworkPath = Path.of(DirConstants.ARTWORK_CACHE_DIR.toAbsolutePath().toString(), artworkName).toString()
+            
+            val artwork = produceState<ImageBitmap?>(
+                initialValue = null,
+                key1 = artworkPath
+            ) {
+                value = withContext(Dispatchers.IO) {
+                    runCatching {
+                        SkiaImage.makeFromEncoded(File(artworkPath).readBytes())
+                            .toComposeImageBitmap()
+                    }.getOrNull()
+                }
+            }.value
+            
+            artwork?.let {
+                ComposeImage(
+                    bitmap = it,
+                    modifier = Modifier.size(250.dp),
+                    contentDescription = "${song.track}. ${song.title}" 
+                )
             }
-        }.value
-        
-        artwork?.let {
-            ComposeImage(
-                bitmap = it,
-                modifier = Modifier.size(250.dp),
-                contentDescription = mp3Path
+        }
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = "${song.track}. ${song.title}" ,
+                style = TextStyle(fontWeight = FontWeight.Bold),
+                textAlign = TextAlign.Center,
+                fontSize = 30.sp
             )
         }
-    }
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Button(
-            colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
-            onClick = {
-                scope.launch {
-                    player.play(File(mp3Path).toURI().toString())
-                }
-            }) {
-            Text("Play")
-        }
-        Button(
-            colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
-            onClick = {
-                player.stop()
-            }) {
-            Text("Stop")
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Button(
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
+                onClick = {
+                    scope.launch {
+                        player.play(File(mp3Path).toURI().toString())
+                    }
+                }) {
+                Text("Play")
+            }
+            Button(
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
+                onClick = {
+                    player.stop()
+                }) {
+                Text("Stop")
+            }
         }
     }
 }
