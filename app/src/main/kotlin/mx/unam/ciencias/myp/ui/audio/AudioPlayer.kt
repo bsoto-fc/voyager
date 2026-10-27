@@ -18,14 +18,15 @@ import androidx.compose.ui.graphics.toComposeImageBitmap
 
 import mx.unam.ciencias.myp.miner.DirConstants
 
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
 
 @Composable
 fun AudioPlayerUI(
     mp3Path: String,
     player: GadulkaPlayer
 ) {
+
+    val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     Row(
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -47,6 +48,7 @@ fun AudioPlayerUI(
         artwork?.let {
             ComposeImage(
                 bitmap = it,
+                modifier = Modifier.size(250.dp),
                 contentDescription = mp3Path
             )
         }
@@ -57,7 +59,9 @@ fun AudioPlayerUI(
         Button(
             colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
             onClick = {
-                player.play(File(mp3Path).toURI().toString())
+                scope.launch {
+                    player.play(File(mp3Path).toURI().toString())
+                }
             }) {
             Text("Play")
         }
