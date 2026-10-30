@@ -303,6 +303,8 @@ fun rightColumn(
         } else {
             var albums by remember { mutableStateOf<List<AlbumRow>>(emptyList()) }
 
+            albums = albums.filterNot { it.name == "Unknown" }
+
             val albumArtworkSize = 135.dp
 
             LaunchedEffect(dbManager) {
