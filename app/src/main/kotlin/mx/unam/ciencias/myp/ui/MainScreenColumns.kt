@@ -158,6 +158,8 @@ fun libraryMiddleColumn(
     var expandedArtistId by remember { mutableStateOf<Int?>(null) }
     var expandedAlbumId by remember { mutableStateOf<Int?>(null) }
 
+    var searchQuery by remember { mutableStateOf<String>("") }
+
     LaunchedEffect(dbManager, currentFoundSong) {
         if(dbManager != null){
             artists = withContext(Dispatchers.IO) { dbManager.getArtists() }
@@ -173,6 +175,24 @@ fun libraryMiddleColumn(
             Text("Se encontró ${currentFoundSong.title} de ${currentFoundSong.artist}")
         }
         LazyColumn {
+
+            item {
+                TextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    modifier = Modifier.weight(1f),
+                    label = { Text("Buscar") },
+                    singleLine = true,
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Filled.Search,
+                            modifier = Modifier.size(24.dp),
+                            contentDescription = "Buscar"
+                        )
+                    }
+                )
+            }
+            
             items(artists, key = { it.id }) { artist ->
                 val expanded = expandedArtistId == artist.id
                 
