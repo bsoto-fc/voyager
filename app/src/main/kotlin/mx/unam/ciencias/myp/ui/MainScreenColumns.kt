@@ -43,8 +43,8 @@ import eu.iamkonstantin.kotlin.gadulka.*
 
 import mx.unam.ciencias.myp.miner.Miner
 import mx.unam.ciencias.myp.miner.DirConstants
-import mx.unam.ciencias.myp.miner.MusicDbManager
 import mx.unam.ciencias.myp.miner.SongMetadata
+import mx.unam.ciencias.myp.db.DatabaseDriver
 import mx.unam.ciencias.myp.db.ArtistRow
 import mx.unam.ciencias.myp.db.AlbumRow
 import mx.unam.ciencias.myp.db.Rola
@@ -150,7 +150,7 @@ fun buttonsLeftColumn(
 fun libraryMiddleColumn(
     modifier: Modifier = Modifier,
     currentFoundSong: SongMetadata? = null,
-    dbManager: MusicDbManager? = null,
+    dbManager: DatabaseDriver? = null,
     onSongSelect: (Rola) -> Unit 
 ) {
 
@@ -191,6 +191,10 @@ fun libraryMiddleColumn(
                         )
                     }
                 )
+            }
+
+            if(searchQuery != "") {
+                
             }
             
             items(artists, key = { it.id }) { artist ->
@@ -304,7 +308,7 @@ private fun expandableRow(
 fun rightColumn(
     modifier: Modifier = Modifier,
     playingSong: Rola? = null,
-    dbManager: MusicDbManager? = null,
+    dbManager: DatabaseDriver? = null,
     isPlayerSelected: Boolean = false ,
     player: GadulkaPlayer? = null
 ) {

@@ -1,4 +1,4 @@
-package mx.unam.ciencias.myp.miner
+package mx.unam.ciencias.myp.db
 
 import java.nio.file.Files
 import java.nio.file.Path
@@ -8,10 +8,7 @@ import java.sql.Connection
 import java.sql.Types.INTEGER
 import java.sql.Statement.RETURN_GENERATED_KEYS
 
-import mx.unam.ciencias.myp.db.Types
-import mx.unam.ciencias.myp.db.Rola
-import mx.unam.ciencias.myp.db.ArtistRow
-import mx.unam.ciencias.myp.db.AlbumRow
+import mx.unam.ciencias.myp.miner.SongMetadata
 
 data class DatabaseInit(
     val path: Path,
@@ -102,7 +99,7 @@ fun initializeDatabase(): DatabaseInit {
     return DatabaseInit(dbFile, wasCreated, dbConnection)
 }
 
-class MusicDbManager(private val connection: Connection) {
+class DatabaseDriver(private val connection: Connection) {
 
     fun saveSong(meta: SongMetadata) {
         // Etiquetas no diferencían entre persona y grupo

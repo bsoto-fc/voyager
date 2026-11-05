@@ -41,9 +41,9 @@ import eu.iamkonstantin.kotlin.gadulka.*
 
 import mx.unam.ciencias.myp.miner.Miner
 import mx.unam.ciencias.myp.miner.DirConstants
-import mx.unam.ciencias.myp.miner.initializeDatabase
-import mx.unam.ciencias.myp.miner.MusicDbManager
 import mx.unam.ciencias.myp.miner.SongMetadata
+import mx.unam.ciencias.myp.db.initializeDatabase
+import mx.unam.ciencias.myp.db.DatabaseDriver
 import mx.unam.ciencias.myp.db.ArtistRow
 import mx.unam.ciencias.myp.db.AlbumRow
 import mx.unam.ciencias.myp.db.Rola
@@ -63,7 +63,7 @@ fun mainScreen() {
 
     var currentFoundSong by remember { mutableStateOf<SongMetadata?>(null) }
 
-    val dbManager = remember(dbConnection) { dbConnection?.let { MusicDbManager(it) } }
+    val dbManager = remember(dbConnection) { dbConnection?.let { DatabaseDriver(it) } }
 
     var playingSong by remember { mutableStateOf<Rola?>(null) }
 
