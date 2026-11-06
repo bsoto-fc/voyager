@@ -47,7 +47,11 @@ import mx.unam.ciencias.myp.db.DatabaseDriver
 import mx.unam.ciencias.myp.db.ArtistRow
 import mx.unam.ciencias.myp.db.AlbumRow
 import mx.unam.ciencias.myp.db.Rola
+
 import mx.unam.ciencias.myp.ui.audio.AudioPlayerUI
+import mx.unam.ciencias.myp.ui.columns.navigationColumn
+import mx.unam.ciencias.myp.ui.columns.audioLibraryColumn
+import mx.unam.ciencias.myp.ui.columns.albumCoversColumn
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -146,11 +150,11 @@ fun mainScreen() {
                         .fillMaxHeight()
                 ) {
 
-                    buttonsLeftColumn(
+                    navigationColumn(
                         modifier = Modifier.weight(0.4f),
                         onAudioPlayerSelect = { isPlayerSelected = !isPlayerSelected }
                     )
-                    libraryMiddleColumn(
+                    audioLibraryColumn(
                         modifier = Modifier.weight(0.4f),
                         currentFoundSong = currentFoundSong,
                         dbManager = dbManager,
@@ -158,7 +162,7 @@ fun mainScreen() {
                             playingSong = song
                         }
                     )
-                    rightColumn(
+                    albumCoversColumn(
                         modifier = Modifier.weight(1f),
                         dbManager = dbManager,
                         playingSong = playingSong,
