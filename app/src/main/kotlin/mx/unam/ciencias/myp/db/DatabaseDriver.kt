@@ -259,4 +259,65 @@ class DatabaseDriver(private val connection: Connection) {
             }
         }
     }
+
+    fun searchArtistsByName(query: String): List<ArtistRow> {
+        val sql = """
+        SELECT id_performer, name
+        FROM performers
+        WHERE name LIKE ?
+        ORDER BY name COLLATE NOCASE
+            """.trimIndent()
+        
+        val pattern = "%$query%"
+        return connection.prepareStatement(sql).use { stmt ->
+            stmt.setString(1, pattern)
+            stmt.executeQuery().use { rs ->
+                buildList {
+                    while (rs.next())
+                        add(ArtistRow(rs.getInt("id_performer"), rs.getString("name")))
+                }
+            }
+        }
+    }
+    
+    fun searchAlbumsByName(query: String): List<AlbumRow> {
+        val sql = """
+        SELECT id_album, name, year, path
+        FROM albums
+        WHERE name LIKE ?
+        ORDER BY name COLLATE NOCASE
+            """.trimIndent()
+        
+        val pattern = "%$query%"
+        return connection.prepareStatement(sql).use { stmt ->
+            stmt.setString(1, pattern)
+            stmt.executeQuery().use { rs ->
+                buildList {
+                    while (rs.next()) {
+                        val year = rs.getInt("year").takeIf { !rs.wasNull() && it != 0 }
+                        add(AlbumRow(rs.getInt("id_album"), rs.getString("name"), year, rs.getString("path")))
+                    }
+                }
+            }
+        }
+    }
+    
+    fun searchSongsByName(query: String): List<Rola> {
+        val sql = """
+        SELECT * FROM rolas
+        WHERE title LIKE ?
+        ORDER BY title COLLATE NOCASE
+            """.trimIndent()
+        
+        val pattern = "%$query%"
+        return connection.prepareStatement(sql).use { stmt ->
+            stmt.setString(1, pattern)
+            stmt.executeQuery().use { rs ->
+                buildList {
+                    while (rs.next())
+                        add(Rola.fromSqlResult(rs))
+                }
+            }
+        }
+    }
 }
