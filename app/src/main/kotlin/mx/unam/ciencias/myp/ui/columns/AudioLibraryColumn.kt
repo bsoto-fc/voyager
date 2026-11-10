@@ -16,6 +16,10 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.window.Dialog
+
 import org.jetbrains.skia.Image as SkiaImage
 import androidx.compose.foundation.lazy.items
 
@@ -46,10 +50,21 @@ fun audioLibraryColumn(
 
     var searchQuery by remember { mutableStateOf<String>("") }
 
+    var filters by remember { mutableStateOf<Map<String,Any>>(emptyMap<String,Any>()) }
+
+    var showingFilterDialog by remember { mutableStateOf(false) }
+
     LaunchedEffect(dbManager, currentFoundSong) {
         if(dbManager != null){
             artists = withContext(Dispatchers.IO) { dbManager.getArtists() }
         }
+    }
+
+    if(showingFilterDialog) {
+        FilterDialog(
+            onConfirmation = {
+                showingFilterDialog = false
+            }, filters)
     }
     
     Column(
@@ -63,18 +78,40 @@ fun audioLibraryColumn(
         LazyColumn {
 
             item {
-                TextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    modifier = Modifier.weight(1f),
-                    label = { Text("Buscar") },
-                    singleLine = true,
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Filled.Search,
-                            modifier = Modifier.size(24.dp),
-                            contentDescription = "Buscar"
-                        )
+                Box(
+                    content = {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .fillMaxHeight()
+                        ) {
+                            TextField(
+                                value = searchQuery,
+                                onValueChange = { searchQuery = it },
+                                modifier = Modifier.weight(1f),
+                                label = { Text("Buscar") },
+                                singleLine = true,
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Filled.Search,
+                                        modifier = Modifier.size(24.dp),
+                                        contentDescription = "Buscar"
+                                    )
+                                }
+                            )
+                            Button(
+                                colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
+                                onClick = {
+                                    showingFilterDialog = true
+                                },
+                                shape = RoundedCornerShape(10.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.PlayArrow,
+                                    contentDescription = "Filtros"
+                                )
+                            }
+                        }
                     }
                 )
             }
@@ -187,5 +224,67 @@ private fun expandableRow(
         )
         Spacer(Modifier.width(8.dp))
         Text(text, maxLines = 1, overflow = TextOverflow.Ellipsis)
+    }
+}
+
+// https://developer.android.com/develop/ui/compose/components/dialog
+@Composable
+fun FilterDialog(
+    onConfirmation: () -> Unit,
+    filters: Map<String, Any>
+) {
+    
+    var searchByArtist by remember { mutableStateOf(false) }
+    var searchByAlbum by remember { mutableStateOf(false) }
+    var searchBySong by remember { mutableStateOf(false) }
+    
+    Dialog(onDismissRequest = { onConfirmation() }) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            shape = MaterialTheme.shapes.extraLarge,
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            ),
+        ) {
+            Column {
+                Text(
+                    text = "Búsqueda avanzada.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = 24.dp, top = 24.dp, end = 24.dp),
+                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
+                ) {
+                    Text(
+                        text = "Artista.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(start = 24.dp, top = 24.dp, end = 24.dp),
+                    )
+                    Switch(
+                        checked = searchByArtist,
+                        onCheckedChange = {
+                            searchByArtist = it
+                        }
+                    )
+                }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
+                ) {
+                    TextButton(onClick = { onConfirmation() }) {
+                        Text("Confirm")
+                    }
+                }
+            }
+        }
     }
 }
