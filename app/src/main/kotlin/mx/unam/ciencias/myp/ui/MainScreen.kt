@@ -52,6 +52,7 @@ import mx.unam.ciencias.myp.ui.audio.AudioPlayerUI
 import mx.unam.ciencias.myp.ui.columns.navigationColumn
 import mx.unam.ciencias.myp.ui.columns.audioLibraryColumn
 import mx.unam.ciencias.myp.ui.columns.albumCoversColumn
+import mx.unam.ciencias.myp.ui.columns.songInfoColumn
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -69,11 +70,13 @@ fun mainScreen() {
 
     val dbManager = remember(dbConnection) { dbConnection?.let { DatabaseDriver(it) } }
 
-    var playingSong by remember { mutableStateOf<Rola?>(null) }
+    var selectedSong by remember { mutableStateOf<Rola?>(null) }
 
     var isPlayerSelected by remember { mutableStateOf(true) }
 
     val player = rememberGadulkaState()
+
+    var isSongInfoSelected by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         val init = initializeDatabase()
@@ -152,20 +155,29 @@ fun mainScreen() {
 
                     navigationColumn(
                         modifier = Modifier.weight(0.4f),
-                        onAudioPlayerSelect = { isPlayerSelected = !isPlayerSelected }
+                        onAudioPlayerSelect = { isPlayerSelected = !isPlayerSelected },
+                        onInfoSelect = { isSongInfoSelected = !isSongInfoSelected }
                     )
-                    audioLibraryColumn(
-                        modifier = Modifier.weight(0.4f),
-                        currentFoundSong = currentFoundSong,
-                        dbManager = dbManager,
-                        onSongSelect = { song ->
-                            playingSong = song
-                        }
-                    )
+                    if(isSongInfoSelected) {
+                        songInfoColumn(
+                            modifier = Modifier.weight(0.4f),
+                            selectedSong = selectedSong,
+                            databaseDriver = dbManager
+                        )
+                    } else {
+                        audioLibraryColumn(
+                            modifier = Modifier.weight(0.4f),
+                            currentFoundSong = currentFoundSong,
+                            dbManager = dbManager,
+                            onSongSelect = { song ->
+                                selectedSong = song
+                            }
+                        )
+                    }
                     albumCoversColumn(
                         modifier = Modifier.weight(1f),
                         dbManager = dbManager,
-                        playingSong = playingSong,
+                        playingSong = selectedSong,
                         isPlayerSelected = isPlayerSelected,
                         player = player
                     )

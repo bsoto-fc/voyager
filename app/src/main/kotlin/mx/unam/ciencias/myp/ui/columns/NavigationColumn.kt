@@ -44,7 +44,8 @@ import mx.unam.ciencias.myp.ui.audio.AudioPlayerUI
 @Composable
 fun navigationColumn(
     modifier: Modifier = Modifier,
-    onAudioPlayerSelect: () -> Unit
+    onAudioPlayerSelect: () -> Unit,
+    onInfoSelect: () -> Unit
 ) {
     Column(
         modifier
@@ -55,7 +56,7 @@ fun navigationColumn(
         Button(
             colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
             onClick = {
-
+                onInfoSelect()
             },
             shape = RoundedCornerShape(8.dp)
         ) {

@@ -195,6 +195,20 @@ class DatabaseDriver(private val connection: Connection) {
         }
     }
 
+    fun updateRola(meta: Rola) {
+        val updateSql = "UPDATE rolas SET title = ?, id_performer = ?, id_album = ?, track = ?, year = ?, genre = ? WHERE path = ?"
+        connection.prepareStatement(updateSql).use { stmt ->
+                                                         stmt.setString(1, meta.title)
+                                                         meta.idPerformer?.let { stmt.setInt(2,it) }
+                                                         stmt.setInt(3, meta.idAlbum)
+                                                         stmt.setInt(4, meta.track)
+                                                         stmt.setInt(5, meta.year)
+                                                         stmt.setString(6, meta.genre)
+                                                         stmt.setString(7, meta.path)
+                                                         stmt.executeUpdate()
+        }
+    }
+
     fun getArtists(): List<ArtistRow> {
         val sql = "SELECT id_performer, name FROM performers ORDER BY name COLLATE NOCASE"
         return connection.prepareStatement(sql).use { stmt ->
