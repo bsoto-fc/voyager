@@ -388,4 +388,27 @@ class DatabaseDriver(private val connection: Connection) {
             }
         }
     }
+
+    fun getOrCreatePerson(person: Person): Int {
+        val selectSql = "SELECT id_person FROM persons WHERE stage_name = ?"
+        connection.prepareStatement(selectSql).use { stmt ->
+            stmt.setString(1, person.stageName)
+            val rs = stmt.executeQuery()
+            if (rs.next())
+                return rs.getInt("id_person")
+        }
+
+        val insertSql = "INSERT INTO persons (stage_name, real_name, birth_date, death_date) VALUES (?, ?, ?, ?)"
+        connection.prepareStatement(insertSql, RETURN_GENERATED_KEYS).use { stmt ->
+            stmt.setString(1, person.stageName)
+            stmt.setString(2, person.realName)
+            stmt.setString(3, person.birthDate)
+            stmt.setString(4, person.deathDate)
+            stmt.executeUpdate()
+            val keys = stmt.generatedKeys
+            if(keys.next())
+                return keys.getInt(1)
+        }
+        return 0
+    }
 }

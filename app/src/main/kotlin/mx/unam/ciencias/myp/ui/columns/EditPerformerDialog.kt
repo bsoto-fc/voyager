@@ -39,12 +39,10 @@ import mx.unam.ciencias.myp.db.Rola
 import mx.unam.ciencias.myp.db.Types
 import mx.unam.ciencias.myp.db.Person
 import mx.unam.ciencias.myp.db.Group
-import mx.unam.ciencias.myp.db.GroupWithMembersAdapter
 
 @Composable
 fun EditPerformerDialog(
-    onPersonConfirmation: (Person) -> Unit,
-    onGroupConfirmation: (Group) -> Unit,
+    onConfirmation: () -> Unit,
     onDismiss: () -> Unit,
     databaseDriver: DatabaseDriver?
 ) {
@@ -57,8 +55,8 @@ fun EditPerformerDialog(
     var groupStartDate by remember { mutableStateOf("") }
     var groupEndDate by remember { mutableStateOf("") }
 
-    var groupMembersString by remember { mutableStateListOf<String>(emptyList()) }
-    var groupMembers by remember { mutableStateListOf<String>(emptyList()) }
+    var groupMembersString by remember { mutableStateOf<String>("") }
+    var groupMembers by remember { mutableStateOf<List<String>>(emptyList()) }
 
     Dialog(
         onDismissRequest = { onDismiss() }
@@ -306,7 +304,8 @@ fun EditPerformerDialog(
                                         birthDate = birthDate,
                                         deathDate = deathDate
                                     )
-                                    onPersonConfirmation(newPerson)
+                                    databaseDriver?.getOrCreatePerson(newPerson)
+                                    onConfirmation()
                                 }
                                 
                                 Types.TYPE_GROUP -> {
@@ -315,7 +314,7 @@ fun EditPerformerDialog(
                                         startDate = groupStartDate,
                                         endDate = groupEndDate
                                     )
-                                    onGroupConfirmation(newGroup)
+                                    onConfirmation()
                                 }
                             }
                         }

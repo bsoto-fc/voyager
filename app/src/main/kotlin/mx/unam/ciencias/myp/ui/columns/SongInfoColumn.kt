@@ -48,12 +48,7 @@ fun songInfoColumn(
     var showEditPerformerDialog by remember { mutableStateOf(false) }
 
     if(showEditPerformerDialog) {
-        EditPerformerDialog(onPersonConfirmation = { person ->
-                                showEditPerformerDialog = false
-                            },
-                            onGroupConfirmation = { group ->
-                                showEditPerformerDialog = false
-                            },
+        EditPerformerDialog(onConfirmation = { showEditPerformerDialog = false },
                             onDismiss = { showEditPerformerDialog = false },
                             databaseDriver = databaseDriver
         ) 
