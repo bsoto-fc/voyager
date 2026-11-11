@@ -99,16 +99,12 @@ fun audioLibraryColumn(
                                     )
                                 }
                             )
-                            Button(
-                                colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
-                                onClick = {
-                                    showingFilterDialog = true
-                                },
-                                shape = RoundedCornerShape(10.dp)
+                            IconButton(
+                                onClick = { showingFilterDialog = !showingFilterDialog }
                             ) {
                                 Icon(
-                                    imageVector = Icons.Filled.PlayArrow,
-                                    contentDescription = "Filtros"
+                                    imageVector = Icons.Filled.MoreVert,
+                                    contentDescription = "Menu"
                                 )
                             }
                         }

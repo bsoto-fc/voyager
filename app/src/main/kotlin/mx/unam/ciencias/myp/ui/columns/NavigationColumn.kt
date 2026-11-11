@@ -45,8 +45,8 @@ import mx.unam.ciencias.myp.ui.audio.AudioPlayerUI
 fun navigationColumn(
     modifier: Modifier = Modifier,
     onAudioPlayerSelect: () -> Unit,
-    onInfoSelect: () -> Unit
-) {
+    onInfoSelect: () -> Unit,
+){
     Column(
         modifier
             .fillMaxWidth()
@@ -99,34 +99,6 @@ fun navigationColumn(
                 )
                 Text(
                     "Reproductor",
-                    style = TextStyle(fontWeight = FontWeight.Bold),
-                    textAlign = TextAlign.Center,
-                    fontSize = 10.sp
-                )
-                
-            }
-        }
-
-        Spacer(modifier = Modifier.height(5.dp))
-
-        Button(
-            colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
-            onClick = {
-
-            },
-            shape = RoundedCornerShape(8.dp)
-        ) {
-            Column(
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Favorite,
-                    contentDescription = "Audioteca"
-                )
-                Text(
-                    "Audioteca",
                     style = TextStyle(fontWeight = FontWeight.Bold),
                     textAlign = TextAlign.Center,
                     fontSize = 10.sp

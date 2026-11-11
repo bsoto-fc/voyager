@@ -334,4 +334,58 @@ class DatabaseDriver(private val connection: Connection) {
             }
         }
     }
+
+    fun getAlbumNameById(id: Int): String {
+        val sql = """
+        SELECT name
+        FROM albums
+        WHERE id_album = ?
+            """.trimIndent()
+
+        return connection.prepareStatement(sql).use { stmt ->
+            stmt.setInt(1, id)
+            stmt.executeQuery().use { rs ->
+                rs.next()
+                rs.getString("name")
+            }
+        }
+    }
+
+    fun getAlbumIdByName(name: String, path: String, year: Int): Int {
+        val selectSql = "SELECT id_album FROM albums WHERE name = ?"
+        connection.prepareStatement(selectSql).use { stmt ->
+            stmt.setString(1, name)
+            val rs = stmt.executeQuery()
+            if (rs.next())
+                return rs.getInt("id_album")
+        }
+
+        val insertSql = "INSERT INTO albums (path, name, year) VALUES (?, ?, ?)"
+        connection.prepareStatement(insertSql, RETURN_GENERATED_KEYS).use { stmt ->
+            stmt.setString(1, path)
+            stmt.setString(2, name)
+            stmt.setInt(3, year)
+            stmt.executeUpdate()
+            val keys = stmt.generatedKeys
+            if(keys.next())
+                return keys.getInt(1)
+        }
+        return 0
+    }
+
+    fun getPerformerNameById(id: Int): String {
+        val sql = """
+        SELECT name
+        FROM performers
+        WHERE id_performer = ?
+            """.trimIndent()
+
+        return connection.prepareStatement(sql).use { stmt ->
+            stmt.setInt(1, id)
+            stmt.executeQuery().use { rs ->
+                rs.next()
+                rs.getString("name")
+            }
+        }
+    }
 }

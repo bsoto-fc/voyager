@@ -32,12 +32,10 @@ import kotlinx.coroutines.withContext
 import java.nio.file.Path
 import java.io.File
 
-import mx.unam.ciencias.myp.miner.DirConstants
-import mx.unam.ciencias.myp.miner.SongMetadata
 import mx.unam.ciencias.myp.db.DatabaseDriver
-import mx.unam.ciencias.myp.db.ArtistRow
-import mx.unam.ciencias.myp.db.AlbumRow
+import mx.unam.ciencias.myp.miner.DirConstants
 import mx.unam.ciencias.myp.db.Rola
+import mx.unam.ciencias.myp.db.Types
 
 @Composable
 fun songInfoColumn(
@@ -46,174 +44,274 @@ fun songInfoColumn(
     databaseDriver: DatabaseDriver?
 ) {
 
-    Column(
+    LazyColumn(
         modifier.fillMaxWidth().padding(8.dp)
     ) {
-        if(selectedSong == null) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text("Selecciona una canción.")
-            }
-        } else {
-
-            val idRola = selectedSong.idRola
-            var idPerformer = selectedSong.idPerformer
-            var idAlbum = selectedSong.idAlbum
-            val path = selectedSong.path
-            var title = selectedSong.title
-            var track = selectedSong.track
-            var year = selectedSong.year
-            var genre = selectedSong.genre
-    
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                val artworkName = "${File(selectedSong.path).parent}".hashCode().toString() + ".jpg"
-                val artworkPath = Path.of(DirConstants.ARTWORK_CACHE_DIR.toAbsolutePath().toString(), artworkName).toString()
-                
-                val artwork = produceState<ImageBitmap?>(
-                    initialValue = null,
-                    key1 = artworkPath
+        item {
+            if(selectedSong == null) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    value = withContext(Dispatchers.IO) {
-                        runCatching {
-                            SkiaImage.makeFromEncoded(File(artworkPath).readBytes())
-                                .toComposeImageBitmap()
-                        }.getOrNull()
-                    }
-                }.value
+                    Text("Selecciona una canción.")
+                }
+            } else {
                 
-                artwork?.let {
-                    ComposeImage(
-                        bitmap = it,
-                        modifier = Modifier.size(250.dp),
-                        contentDescription = "${selectedSong.track}. ${selectedSong.title}" 
+                val idRola by remember { mutableStateOf(selectedSong.idRola) }
+                var idPerformer by remember { mutableStateOf(selectedSong.idPerformer ?: 0) }
+                var idAlbum by remember { mutableStateOf(selectedSong.idAlbum) }
+                val path by remember { mutableStateOf(selectedSong.path) }
+                var title by remember{ mutableStateOf(selectedSong.title) }
+                var track by remember {mutableStateOf(selectedSong.track) }
+                var year by remember {mutableStateOf(selectedSong.year) }
+                var genre by remember {mutableStateOf(selectedSong.genre) }
+                
+                var albumName = remember(databaseDriver) { databaseDriver?.getAlbumNameById(idAlbum) ?: "" }
+                var performerName = remember(databaseDriver) { databaseDriver?.getPerformerNameById(idPerformer) ?: "" }
+
+                var performerType by remember { mutableStateOf(2) }
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    val artworkName = "${File(selectedSong.path).parent}".hashCode().toString() + ".jpg"
+                    val artworkPath = Path.of(DirConstants.ARTWORK_CACHE_DIR.toAbsolutePath().toString(), artworkName).toString()
+                    
+                    val artwork = produceState<ImageBitmap?>(
+                        initialValue = null,
+                        key1 = artworkPath
+                    ) {
+                        value = withContext(Dispatchers.IO) {
+                            runCatching {
+                                SkiaImage.makeFromEncoded(File(artworkPath).readBytes())
+                                    .toComposeImageBitmap()
+                            }.getOrNull()
+                        }
+                    }.value
+                    
+                    artwork?.let {
+                        ComposeImage(
+                            bitmap = it,
+                            modifier = Modifier.size(250.dp),
+                            contentDescription = "${selectedSong.track}. ${selectedSong.title}" 
+                        )
+                    }
+                }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    TextField(
+                        value = title,
+                        onValueChange = { title = it },
+                        modifier = Modifier.weight(1f),
+                        label = { Text("Titulo") },
+                        singleLine = true,
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Filled.Edit,
+                                modifier = Modifier.size(24.dp),
+                                contentDescription = "Titulo"
+                            )
+                        }
                     )
                 }
-            }
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                TextField(
-                    value = title,
-                    onValueChange = { title = it },
-                    modifier = Modifier.weight(1f),
-                    label = { Text("Titulo") },
-                    singleLine = true,
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Filled.Edit,
-                            modifier = Modifier.size(24.dp),
-                            contentDescription = "Titulo"
-                        )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    
+                    var trackString by remember { mutableStateOf(track.toString()) }
+                    var errorMessage by remember { mutableStateOf("") }
+                    
+                    TextField(
+                        value = trackString,
+                        onValueChange = { newValue ->
+                            runCatching { newValue.toInt() }.fold(
+                                onSuccess = { 
+                                    trackString = newValue
+                                    track = newValue.toInt()
+                                },
+                                onFailure = { 
+                                    errorMessage = "Ingresa un valor entero."
+                                    trackString = newValue
+                                }
+                            )
+                        },
+                        modifier = Modifier.weight(1f),
+                        label = { Text("Pista") },
+                        singleLine = true,
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Filled.Edit,
+                                modifier = Modifier.size(24.dp),
+                                contentDescription = "Pista"
+                            )
+                        },
+                        isError = errorMessage.isNotEmpty()
+                    )
+                }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    
+                    var yearString by remember { mutableStateOf(year.toString()) }
+                    var errorMessage by remember { mutableStateOf("") }
+                    
+                    TextField(
+                        value = yearString,
+                        onValueChange = { newValue ->
+                            runCatching { newValue.toInt() }.fold(
+                                onSuccess = { 
+                                    yearString = newValue
+                                    year = newValue.toInt()
+                                },
+                                onFailure = { 
+                                    errorMessage = "Ingresa un valor entero."
+                                    yearString = newValue
+                                }
+                            )
+                        },
+                        modifier = Modifier.weight(1f),
+                        label = { Text("Año") },
+                        singleLine = true,
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Filled.Edit,
+                                modifier = Modifier.size(24.dp),
+                                contentDescription = "Año"
+                            )
+                        },
+                        isError = errorMessage.isNotEmpty()
+                    )
+                }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    TextField(
+                        value = genre,
+                        onValueChange = { genre = it },
+                        modifier = Modifier.weight(1f),
+                        label = { Text("Género") },
+                        singleLine = true,
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Filled.Edit,
+                                modifier = Modifier.size(24.dp),
+                                contentDescription = "Género"
+                            )
+                        }
+                    )
+                }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    TextField(
+                        value = albumName,
+                        onValueChange = {
+                            albumName = it
+                        },
+                        modifier = Modifier.weight(1f),
+                        label = { Text("Album") },
+                        singleLine = true,
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Filled.Edit,
+                                modifier = Modifier.size(24.dp),
+                                contentDescription = "Album"
+                            )
+                        }
+                    )
+                }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+
+                    var showMenu by remember { mutableStateOf(false) }
+
+                    TextField(
+                        value = performerName,
+                        onValueChange = {
+                            performerName = it
+                        },
+                        modifier = Modifier.weight(1f),
+                        label = { Text("Intérprete") },
+                        singleLine = true,
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Filled.Edit,
+                                modifier = Modifier.size(24.dp),
+                                contentDescription = "Intérprete"
+                            )
+                        }
+                    )
+                    // https://kotlinlang.org/api/compose-multiplatform/material3/androidx.compose.material3/-dropdown-menu.html
+                    Box() {
+                        IconButton(
+                            onClick = { showMenu = !showMenu }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.MoreVert,
+                                contentDescription = "Menu"
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = showMenu,
+                            onDismissRequest = { showMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Persona") },
+                                onClick = {
+                                    performerType = Types.TYPE_PERSON
+                                    showMenu = false
+                                },
+                                leadingIcon = { Icon(Icons.Filled.Person, contentDescription = null) }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Grupo") },
+                                onClick = {
+                                    performerType = Types.TYPE_GROUP
+                                    showMenu = false
+                                },
+                                leadingIcon = { Icon(Icons.Filled.Star, contentDescription = null) }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Desconocido") },
+                                onClick = {
+                                    performerType = Types.TYPE_UNKNOWN
+                                    showMenu = false
+                                },
+                                leadingIcon = { Icon(Icons.Filled.Lock, contentDescription = null) }
+                            )
+                            HorizontalDivider()
+                            DropdownMenuItem(
+                                text = { Text("Editor de artistas.") },
+                                onClick = {
+
+                                    showMenu = false
+                                },
+                                leadingIcon = { Icon(Icons.Filled.Edit, contentDescription = null) }
+                            )
+                        }
                     }
-                )
-            }
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-
-                var trackString by remember { mutableStateOf("") }
-                var errorMessage by remember { mutableStateOf("") }
-                
-                TextField(
-                    value = trackString,
-                    onValueChange = { newValue ->
-                        runCatching { newValue.toInt() }.fold(
-                            onSuccess = { 
-                                trackString = newValue
-                                track = newValue.toInt()
-                            },
-                            onFailure = { 
-                                errorMessage = "Ingresa un valor entero."
-                                trackString = newValue
-                            }
-                        )
-                    },
-                    modifier = Modifier.weight(1f),
-                    label = { Text("Pista") },
-                    singleLine = true,
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Filled.Edit,
-                            modifier = Modifier.size(24.dp),
-                            contentDescription = "Pista"
-                        )
-                    },
-                    isError = errorMessage.isNotEmpty()
-                )
-            }
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-
-                var yearString by remember { mutableStateOf("") }
-                var errorMessage by remember { mutableStateOf("") }
-
-                TextField(
-                    value = yearString,
-                    onValueChange = { newValue ->
-                        runCatching { newValue.toInt() }.fold(
-                            onSuccess = { 
-                                yearString = newValue
-                                year = newValue.toInt()
-                            },
-                            onFailure = { 
-                                errorMessage = "Ingresa un valor entero."
-                                yearString = newValue
-                            }
-                        )
-                    },
-                    modifier = Modifier.weight(1f),
-                    label = { Text("Año") },
-                    singleLine = true,
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Filled.Edit,
-                            modifier = Modifier.size(24.dp),
-                            contentDescription = "Año"
-                        )
-                    },
-                    isError = errorMessage.isNotEmpty()
-                )
-            }
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                TextField(
-                    value = genre,
-                    onValueChange = { genre = it },
-                    modifier = Modifier.weight(1f),
-                    label = { Text("Género") },
-                    singleLine = true,
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Filled.Edit,
-                            modifier = Modifier.size(24.dp),
-                            contentDescription = "Género"
-                        )
+                }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Button(
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
+                        onClick = {
+                            idAlbum = databaseDriver?.getAlbumIdByName(albumName, path, year) ?: 0
+                            databaseDriver?.updateRola(Rola(
+                                                           idRola = idRola,
+                                                           idPerformer = idPerformer,
+                                                           idAlbum = idAlbum,
+                                                           path = path,
+                                                           title = title,
+                                                           track = track,
+                                                           year = year,
+                                                           genre = genre
+                                                       ))
+                        }) {
+                        Text("Guardar")
                     }
-                )
-            }
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Button(
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
-                    onClick = {
-                        databaseDriver?.updateRola(Rola(
-                                                      idRola = idRola,
-                                                      idPerformer = idPerformer,
-                                                      idAlbum = idAlbum,
-                                                      path = path,
-                                                      title = title,
-                                                      track = track,
-                                                      year = year,
-                                                      genre = genre
-                                                  ))
-                    }) {
-                    Text("Guardar")
                 }
             }
         }
