@@ -44,7 +44,7 @@ data class Performer(
 }
 
 data class Person(
-    val idPerson: Int,
+    val idPerson: Int? = null,
     val stageName: String,
     val realName: String?,
     val birthDate: String?,
@@ -64,7 +64,7 @@ data class Person(
 }
 
 data class Group(
-    val idGroup: Int,
+    val idGroup: Int? = null,
     val name: String,
     val startDate: String?,
     val endDate: String?

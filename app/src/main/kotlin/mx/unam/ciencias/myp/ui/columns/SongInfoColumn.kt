@@ -22,6 +22,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 
 import org.jetbrains.skia.Image as SkiaImage
 import androidx.compose.foundation.lazy.items
@@ -43,6 +44,20 @@ fun songInfoColumn(
     selectedSong: Rola?,
     databaseDriver: DatabaseDriver?
 ) {
+
+    var showEditPerformerDialog by remember { mutableStateOf(false) }
+
+    if(showEditPerformerDialog) {
+        EditPerformerDialog(onPersonConfirmation = { person ->
+                                showEditPerformerDialog = false
+                            },
+                            onGroupConfirmation = { group ->
+                                showEditPerformerDialog = false
+                            },
+                            onDismiss = { showEditPerformerDialog = false },
+                            databaseDriver = databaseDriver
+        ) 
+    }
 
     LazyColumn(
         modifier.fillMaxWidth().padding(8.dp)
@@ -284,7 +299,7 @@ fun songInfoColumn(
                             DropdownMenuItem(
                                 text = { Text("Editor de artistas.") },
                                 onClick = {
-
+                                    showEditPerformerDialog = true
                                     showMenu = false
                                 },
                                 leadingIcon = { Icon(Icons.Filled.Edit, contentDescription = null) }
