@@ -40,16 +40,23 @@ import mx.unam.ciencias.myp.db.Types
 import mx.unam.ciencias.myp.db.Person
 import mx.unam.ciencias.myp.db.Group
 
+data class Filters(
+    var byArtist: Boolean = true,
+    var byAlbum: Boolean = true,
+    var bySong: Boolean = true
+)
+
 @Composable
 fun AdvancedSearchDialog(
     onConfirmation: () -> Unit,
     onDismiss: () -> Unit,
-    databaseDriver: DatabaseDriver?
+    databaseDriver: DatabaseDriver?,
+    filters: Filters
 ) {
 
-    var artistChecked by remember { mutableStateOf(true) }
-    var albumChecked by remember { mutableStateOf(true) }
-    var songChecked by remember { mutableStateOf(true) }
+    var artistChecked by remember(filters) { mutableStateOf(filters.byArtist) }
+    var albumChecked by remember(filters) { mutableStateOf(filters.byAlbum) }
+    var songChecked by remember(filters) { mutableStateOf(filters.bySong) }
 
     Dialog(
         onDismissRequest = { onDismiss() }

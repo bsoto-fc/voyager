@@ -58,6 +58,8 @@ fun EditPerformerDialog(
     var groupMembersString by remember { mutableStateOf<String>("") }
     var groupMembers by remember { mutableStateOf<List<String>>(emptyList()) }
 
+    var errorMsg by remember { mutableStateOf("") }
+
     Dialog(
         onDismissRequest = { onDismiss() }
     ) {
@@ -304,8 +306,14 @@ fun EditPerformerDialog(
                                         birthDate = birthDate,
                                         deathDate = deathDate
                                     )
-                                    databaseDriver?.getOrCreatePerson(newPerson)
-                                    onConfirmation()
+                                    runCatching { databaseDriver?.getOrCreatePerson(newPerson) }.fold(
+                                        onSuccess = {
+                                            onConfirmation()
+                                        },
+                                        onFailure = {
+                                            errorMsg = "Error al obtener/crear persona."
+                                        }
+                                    )
                                 }
                                 
                                 Types.TYPE_GROUP -> {
@@ -314,12 +322,33 @@ fun EditPerformerDialog(
                                         startDate = groupStartDate,
                                         endDate = groupEndDate
                                     )
-                                    onConfirmation()
+
+                                    var groupId: Int? = null
+                                    runCatching { groupId = databaseDriver?.getOrCreateGroup(newGroup) }.fold(
+                                        onSuccess = {
+                                            groupId?.let { databaseDriver?.associatePeopleAndGroups(it, groupMembers) }
+                                            onConfirmation()
+                                        },
+                                        onFailure = {
+                                            errorMsg = "Error al obtener/crear grupo."
+                                        }
+                                    )
                                 }
                             }
                         }
                     ) {
                         Text("Confirmar")
+                    }
+                }
+                if(!errorMsg.isEmpty()) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(0.dp, 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(errorMsg)
                     }
                 }
             }

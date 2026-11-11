@@ -259,6 +259,24 @@ class DatabaseDriver(private val connection: Connection) {
             }
         }
     }
+
+    fun getSongsFromAlbum(albumId: Int): List<Rola> {
+        val sql = """
+        SELECT * FROM rolas
+        WHERE id_album = ?
+        ORDER BY track, title COLLATE NOCASE
+            """.trimIndent()
+        return connection.prepareStatement(sql).use { stmt ->
+            stmt.setInt(1, albumId)
+            stmt.executeQuery().use { rs ->
+                buildList {
+                    while (rs.next()) {
+                        add(Rola.fromSqlResult(rs))
+                    }
+                }
+            }
+        }
+    }
     
     fun getAllAlbums(): List<AlbumRow> {
         val sql = "SELECT id_album, name, year, path FROM albums ORDER BY name COLLATE NOCASE"
@@ -345,8 +363,10 @@ class DatabaseDriver(private val connection: Connection) {
         return connection.prepareStatement(sql).use { stmt ->
             stmt.setInt(1, id)
             stmt.executeQuery().use { rs ->
-                rs.next()
-                rs.getString("name")
+                if(rs.next())
+                    return rs.getString("name")
+                else
+                    return "Unknown"
             }
         }
     }
@@ -383,10 +403,33 @@ class DatabaseDriver(private val connection: Connection) {
         return connection.prepareStatement(sql).use { stmt ->
             stmt.setInt(1, id)
             stmt.executeQuery().use { rs ->
-                rs.next()
-                rs.getString("name")
+                if(rs.next())
+                    return rs.getString("name")
+                else
+                    return "Unknown"
             }
         }
+    }
+
+    fun getPerformerIdByName(name: String, type: Int): Int {
+        val selectSql = "SELECT id_performer FROM performers WHERE name = ?"
+        connection.prepareStatement(selectSql).use { stmt ->
+            stmt.setString(1, name)
+            val rs = stmt.executeQuery()
+            if (rs.next())
+                return rs.getInt("id_performer")
+        }
+
+        val insertSql = "INSERT INTO performers (name, id_type) VALUES (?, ?)"
+        connection.prepareStatement(insertSql, RETURN_GENERATED_KEYS).use { stmt ->
+            stmt.setString(1, name)
+            stmt.setInt(2, type)
+            stmt.executeUpdate()
+            val keys = stmt.generatedKeys
+            if(keys.next())
+                return keys.getInt(1)
+        }
+        throw IllegalArgumentException("No se pudo recuperar id del intérprete")
     }
 
     fun getOrCreatePerson(person: Person): Int {
@@ -409,6 +452,52 @@ class DatabaseDriver(private val connection: Connection) {
             if(keys.next())
                 return keys.getInt(1)
         }
-        return 0
+        throw IllegalArgumentException("No se pudo recuperar id de la persona")
+    }
+
+    private fun getPersonId(name: String): Int {
+        val selectSql = "SELECT id_person FROM persons WHERE stage_name = ?"
+        connection.prepareStatement(selectSql).use { stmt ->
+            stmt.setString(1, name)
+            val rs = stmt.executeQuery()
+            if (rs.next())
+                return rs.getInt("id_person")
+        }
+        throw IllegalArgumentException("No se pudo recuperar id de la persona")
+    }
+
+    fun getOrCreateGroup(group: Group): Int {
+        val selectSql = "SELECT id_group FROM groups WHERE name = ?"
+        connection.prepareStatement(selectSql).use { stmt ->
+            stmt.setString(1, group.name)
+            val rs = stmt.executeQuery()
+            if (rs.next())
+                return rs.getInt("id_group")
+        }
+
+        val insertSql = "INSERT INTO groups (name, start_date, end_date) VALUES (?, ?, ?)"
+        connection.prepareStatement(insertSql, RETURN_GENERATED_KEYS).use { stmt ->
+            stmt.setString(1, group.name)
+            stmt.setString(2, group.startDate)
+            stmt.setString(3, group.endDate)
+            stmt.executeUpdate()
+            val keys = stmt.generatedKeys
+            if(keys.next())
+                return keys.getInt(1)
+        }
+        throw IllegalArgumentException("No se pudo recuperar id del grupo")
+    }
+
+    fun associatePeopleAndGroups(groupId: Int, members: List<String>) {
+        members.forEach { member ->
+            var memberId = runCatching { getPersonId(member) }.getOrNull()
+            if(memberId == null) return@forEach
+            val insertSql = "INSERT INTO in_group (id_person, id_group) VALUES (?, ?)"
+            connection.prepareStatement(insertSql).use { stmt ->
+                stmt.setInt(1, memberId)
+                stmt.setInt(2, groupId)
+                stmt.executeUpdate()
+            }
+        }
     }
 }

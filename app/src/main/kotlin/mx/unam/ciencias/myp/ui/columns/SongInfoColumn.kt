@@ -47,6 +47,8 @@ fun songInfoColumn(
 
     var showEditPerformerDialog by remember { mutableStateOf(false) }
 
+    var filters by remember { mutableStateOf<Filters>(Filters()) }
+
     if(showEditPerformerDialog) {
         EditPerformerDialog(onConfirmation = { showEditPerformerDialog = false },
                             onDismiss = { showEditPerformerDialog = false },
@@ -309,6 +311,7 @@ fun songInfoColumn(
                         colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
                         onClick = {
                             idAlbum = databaseDriver?.getAlbumIdByName(albumName, path, year) ?: 0
+                            idPerformer = databaseDriver?.getPerformerIdByName(performerName, performerType) ?: 0
                             databaseDriver?.updateRola(Rola(
                                                            idRola = idRola,
                                                            idPerformer = idPerformer,
