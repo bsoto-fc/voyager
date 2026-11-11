@@ -61,10 +61,15 @@ fun audioLibraryColumn(
     }
 
     if(showingFilterDialog) {
-        FilterDialog(
+        AdvancedSearchDialog(
             onConfirmation = {
                 showingFilterDialog = false
-            }, filters)
+            },
+            onDismiss = {
+                showingFilterDialog = false
+            },
+            databaseDriver = dbManager
+        )
     }
     
     Column(
