@@ -53,6 +53,7 @@ import mx.unam.ciencias.myp.ui.columns.navigationColumn
 import mx.unam.ciencias.myp.ui.columns.audioLibraryColumn
 import mx.unam.ciencias.myp.ui.columns.albumCoversColumn
 import mx.unam.ciencias.myp.ui.columns.songInfoColumn
+import mx.unam.ciencias.myp.ui.columns.albumInfoColumn
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -71,12 +72,15 @@ fun mainScreen() {
     val dbManager = remember(dbConnection) { dbConnection?.let { DatabaseDriver(it) } }
 
     var selectedSong by remember { mutableStateOf<Rola?>(null) }
+    var selectedAlbumId by remember { mutableStateOf<Int?>(null) }
 
     var isPlayerSelected by remember { mutableStateOf(true) }
 
     val player = rememberGadulkaState()
 
     var isSongInfoSelected by remember { mutableStateOf(false) }
+
+    var isAlbumInfoSelected by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         val init = initializeDatabase()
@@ -156,12 +160,24 @@ fun mainScreen() {
                     navigationColumn(
                         modifier = Modifier.weight(0.4f),
                         onAudioPlayerSelect = { isPlayerSelected = !isPlayerSelected },
-                        onInfoSelect = { isSongInfoSelected = !isSongInfoSelected }
+                        onSongInfoSelect = { isSongInfoSelected = !isSongInfoSelected },
+                        onAlbumInfoSelect = { isAlbumInfoSelected = !isAlbumInfoSelected }
                     )
                     if(isSongInfoSelected) {
+                        isAlbumInfoSelected = false
                         songInfoColumn(
                             modifier = Modifier.weight(0.4f),
                             selectedSong = selectedSong,
+                            databaseDriver = dbManager
+                        )
+                    } else if (isAlbumInfoSelected) {
+                        var album = runCatching {
+                            selectedAlbumId?.let { dbManager?.getAlbumFromId(it) }
+                        }.getOrNull()
+                        isSongInfoSelected = false
+                        albumInfoColumn(
+                            modifier = Modifier.weight(0.4f),
+                            selectedAlbum = album,
                             databaseDriver = dbManager
                         )
                     } else {
@@ -179,7 +195,10 @@ fun mainScreen() {
                         dbManager = dbManager,
                         playingSong = selectedSong,
                         isPlayerSelected = isPlayerSelected,
-                        player = player
+                        player = player,
+                        onAlbumSelect = { id ->
+                            selectedAlbumId = id
+                        }
                     )
                 }
             }

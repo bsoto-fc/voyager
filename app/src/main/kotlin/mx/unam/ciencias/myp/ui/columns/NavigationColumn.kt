@@ -45,7 +45,8 @@ import mx.unam.ciencias.myp.ui.audio.AudioPlayerUI
 fun navigationColumn(
     modifier: Modifier = Modifier,
     onAudioPlayerSelect: () -> Unit,
-    onInfoSelect: () -> Unit,
+    onSongInfoSelect: () -> Unit,
+    onAlbumInfoSelect: () -> Unit
 ){
     Column(
         modifier
@@ -56,7 +57,7 @@ fun navigationColumn(
         Button(
             colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
             onClick = {
-                onInfoSelect()
+                onSongInfoSelect()
             },
             shape = RoundedCornerShape(8.dp)
         ) {
@@ -67,10 +68,38 @@ fun navigationColumn(
             ) {
                 Icon(
                     imageVector = Icons.Filled.Settings,
-                    contentDescription = "Información"
+                    contentDescription = "Canción"
                 )
                 Text(
-                    "Información",
+                    "Canción",
+                    style = TextStyle(fontWeight = FontWeight.Bold),
+                    textAlign = TextAlign.Center,
+                    fontSize = 10.sp
+                )
+                
+            }
+        }
+
+        Spacer(modifier = Modifier.height(5.dp))
+
+        Button(
+            colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
+            onClick = {
+                onAlbumInfoSelect()
+            },
+            shape = RoundedCornerShape(8.dp)
+        ) {
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Settings,
+                    contentDescription = "Álbum"
+                )
+                Text(
+                    "Álbum",
                     style = TextStyle(fontWeight = FontWeight.Bold),
                     textAlign = TextAlign.Center,
                     fontSize = 10.sp

@@ -209,6 +209,28 @@ class DatabaseDriver(private val connection: Connection) {
         }
     }
 
+    fun updateAlbum(meta: Album) {
+        val updateSql = "UPDATE albums SET name = ?, year = ? WHERE id_album = ?"
+        connection.prepareStatement(updateSql).use { stmt ->
+                                                         stmt.setString(1, meta.name)
+                                                         stmt.setInt(2, meta.year)
+                                                         stmt.setInt(3, meta.idAlbum)
+                                                         stmt.executeUpdate()
+        }
+    }
+
+    fun getAlbumFromId(id: Int): Album {
+        val sql = "SELECT name, year, path FROM albums WHERE id_album = ?"
+        return connection.prepareStatement(sql).use { stmt ->
+            stmt.setInt(1,id)
+            stmt.executeQuery().use { rs ->
+                if (rs.next())
+                    return Album(id, rs.getString("path"), rs.getString("name"), rs.getInt("year"))
+                throw IllegalArgumentException("Álbum inexistente")
+            }
+        }
+    }
+
     fun getArtists(): List<ArtistRow> {
         val sql = "SELECT id_performer, name FROM performers ORDER BY name COLLATE NOCASE"
         return connection.prepareStatement(sql).use { stmt ->

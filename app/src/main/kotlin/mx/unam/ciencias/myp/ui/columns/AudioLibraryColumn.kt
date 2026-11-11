@@ -55,8 +55,9 @@ fun audioLibraryColumn(
 
     if(showingFilterDialog) {
         AdvancedSearchDialog(
-            onConfirmation = {
+            onConfirmation = { newFilters ->
                 showingFilterDialog = false
+                filters = newFilters
             },
             onDismiss = {
                 showingFilterDialog = false

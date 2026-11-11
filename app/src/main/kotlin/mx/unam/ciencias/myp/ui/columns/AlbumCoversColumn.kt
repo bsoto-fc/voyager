@@ -24,6 +24,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import org.jetbrains.skia.Image as SkiaImage
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -48,7 +49,8 @@ fun albumCoversColumn(
     playingSong: Rola? = null,
     dbManager: DatabaseDriver? = null,
     isPlayerSelected: Boolean = false ,
-    player: GadulkaPlayer? = null
+    player: GadulkaPlayer? = null,
+    onAlbumSelect: (Int) -> Unit
 ) {
     Column(
         modifier
@@ -101,10 +103,17 @@ fun albumCoversColumn(
                         ComposeImage(
                             bitmap = it,
                             contentDescription = album.name,
-                            modifier = Modifier.size(albumArtworkSize),
+                            modifier = Modifier
+                                .size(albumArtworkSize)
+                                .clickable {
+                                    onAlbumSelect(album.id)
+                                }
                         )
                     } ?: Box(
-                        modifier = Modifier.size(albumArtworkSize).border(1.dp, Color.Black),
+                        modifier = Modifier
+                            .size(albumArtworkSize)
+                            .border(1.dp, Color.Black)
+                            .clickable { onAlbumSelect(album.id) },
                         content = {
                             Column(
                                 modifier = Modifier

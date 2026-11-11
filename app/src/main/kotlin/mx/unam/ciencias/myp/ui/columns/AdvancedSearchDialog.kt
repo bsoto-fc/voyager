@@ -48,7 +48,7 @@ data class Filters(
 
 @Composable
 fun AdvancedSearchDialog(
-    onConfirmation: () -> Unit,
+    onConfirmation: (Filters) -> Unit,
     onDismiss: () -> Unit,
     databaseDriver: DatabaseDriver?,
     filters: Filters
@@ -156,7 +156,11 @@ fun AdvancedSearchDialog(
                     }
                     ElevatedButton(
                         onClick = {
-                            onConfirmation()
+                            onConfirmation(Filters(
+                                               byArtist = artistChecked,
+                                               byAlbum = albumChecked,
+                                               bySong = songChecked
+                                           ))
                         }
                     ) {
                         Text("Confirmar")
