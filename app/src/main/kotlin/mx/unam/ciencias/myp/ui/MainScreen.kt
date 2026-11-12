@@ -39,6 +39,7 @@ import java.sql.Connection
 
 import eu.iamkonstantin.kotlin.gadulka.*
 
+import mx.unam.ciencias.myp.controller.MainController
 import mx.unam.ciencias.myp.miner.Miner
 import mx.unam.ciencias.myp.miner.DirConstants
 import mx.unam.ciencias.myp.miner.SongMetadata
@@ -58,18 +59,8 @@ import mx.unam.ciencias.myp.ui.columns.albumInfoColumn
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun mainScreen() {
-    
-    var addingDirectory by remember { mutableStateOf(false) }
-    var selectedDirectory by remember { mutableStateOf<String?>(null) }
 
-    var existingDb by remember { mutableStateOf(false) }
-
-    var dbConnection by remember { mutableStateOf<Connection?>(null) }
-    var miner by remember { mutableStateOf<Miner?>(null) }
-
-    var currentFoundSong by remember { mutableStateOf<SongMetadata?>(null) }
-
-    val dbManager = remember(dbConnection) { dbConnection?.let { DatabaseDriver(it) } }
+    val controller = remember { MainController() }
 
     var selectedSong by remember { mutableStateOf<Rola?>(null) }
     var selectedAlbumId by remember { mutableStateOf<Int?>(null) }
@@ -82,19 +73,12 @@ fun mainScreen() {
 
     var isAlbumInfoSelected by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) {
-        val init = initializeDatabase()
-        existingDb = !init.wasCreated
-        dbConnection = init.connection
-    }
-
     DisposableEffect(Unit) {
         onDispose {
-            miner?.stop()
-            dbConnection?.close()
+            controller.close()
         }
     }
-
+ 
     MaterialTheme {
         Scaffold(
             topBar = {
@@ -115,31 +99,9 @@ fun mainScreen() {
             },
             floatingActionButton = {
                 FloatingActionButton(onClick = {
-                                         println("Pressed Button")
-                                         // https://github.com/JetBrains/compose-multiplatform/issues/176
-                                         UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
-                                         val fileChooser = JFileChooser()
-                                         fileChooser.fileSelectionMode = JFileChooser.DIRECTORIES_ONLY
-                                         fileChooser.showSaveDialog(null)
-                                         selectedDirectory = fileChooser.getSelectedFile()?.toString()
-                                         val connection = dbConnection
-                                         if(selectedDirectory != null && connection != null) {
-                                             miner?.stop()
-                                             miner = Miner(
-                                                 path = selectedDirectory.toString(),
-                                                 onFound = { metadata ->
-                                                     dbManager?.saveSong(metadata)
-                                                     currentFoundSong = metadata
-                                                     println("Se añadió: ${metadata.title} por ${metadata.artist}")
-                                                 },
-                                                 onFinish = { 
-                                                     addingDirectory = false
-                                                     currentFoundSong = null
-                                                 }
-                                             ).also{
-                                                 it.recursiveMine()
-                                                 addingDirectory = true
-                                             }
+                                         val directory = chooseDirectory()
+                                         if(directory != null) {
+                                             controller.onDirectoryChosen(directory)
                                          }
                                      }) {
                     Icon(Icons.Default.Add, contentDescription = "Add")
@@ -156,35 +118,38 @@ fun mainScreen() {
                         .fillMaxWidth()
                         .fillMaxHeight()
                 ) {
-
                     navigationColumn(
                         modifier = Modifier.weight(0.4f),
                         onAudioPlayerSelect = { isPlayerSelected = !isPlayerSelected },
-                        onSongInfoSelect = { isSongInfoSelected = !isSongInfoSelected },
-                        onAlbumInfoSelect = { isAlbumInfoSelected = !isAlbumInfoSelected }
+                        onSongInfoSelect = {
+                            isSongInfoSelected = !isSongInfoSelected
+                            isAlbumInfoSelected = false
+                        },
+                        onAlbumInfoSelect = {
+                            isAlbumInfoSelected = !isAlbumInfoSelected
+                            isSongInfoSelected = false
+                        }
                     )
                     if(isSongInfoSelected) {
-                        isAlbumInfoSelected = false
                         songInfoColumn(
                             modifier = Modifier.weight(0.4f),
                             selectedSong = selectedSong,
-                            databaseDriver = dbManager
+                            databaseDriver = controller.db
                         )
                     } else if (isAlbumInfoSelected) {
-                        var album = runCatching {
-                            selectedAlbumId?.let { dbManager?.getAlbumFromId(it) }
+                        val album = runCatching {
+                            selectedAlbumId?.let { controller.db?.getAlbumFromId(it) }
                         }.getOrNull()
-                        isSongInfoSelected = false
                         albumInfoColumn(
                             modifier = Modifier.weight(0.4f),
                             selectedAlbum = album,
-                            databaseDriver = dbManager
+                            databaseDriver = controller.db
                         )
                     } else {
                         audioLibraryColumn(
                             modifier = Modifier.weight(0.4f),
-                            currentFoundSong = currentFoundSong,
-                            dbManager = dbManager,
+                            currentFoundSong = controller.currentFoundSong,
+                            dbManager = controller.db,
                             onSongSelect = { song ->
                                 selectedSong = song
                             }
@@ -192,7 +157,7 @@ fun mainScreen() {
                     }
                     albumCoversColumn(
                         modifier = Modifier.weight(1f),
-                        dbManager = dbManager,
+                        dbManager = controller.db,
                         playingSong = selectedSong,
                         isPlayerSelected = isPlayerSelected,
                         player = player,
@@ -204,4 +169,15 @@ fun mainScreen() {
             }
         }
     }
+}
+
+fun chooseDirectory(): String? {
+    UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
+    val fileChooser = JFileChooser()
+    fileChooser.fileSelectionMode = JFileChooser.DIRECTORIES_ONLY
+    val result = fileChooser.showOpenDialog(null)
+    if(result == JFileChooser.APPROVE_OPTION) {
+        return fileChooser.selectedFile.toString()
+    }
+    return null
 }
