@@ -89,7 +89,7 @@ fun audioLibraryColumn(
                                 value = searchQuery,
                                 onValueChange = { searchQuery = it },
                                 modifier = Modifier.weight(1f),
-                                label = { Text("Buscar") },
+                                label = { Text("Buscar", maxLines = 1) },
                                 singleLine = true,
                                 leadingIcon = {
                                     Icon(
