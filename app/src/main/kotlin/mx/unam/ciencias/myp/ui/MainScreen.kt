@@ -85,15 +85,6 @@ fun mainScreen() {
                 TopAppBar(
                     title = {
                         Text("Voyager")
-                    },
-                    actions = {
-                        IconButton(onClick = {
-                                   }) {
-                            Icon(
-                                imageVector = Icons.Filled.Star,
-                                contentDescription = "Dark Mode"
-                            )
-                        }
                     }
                 )
             },

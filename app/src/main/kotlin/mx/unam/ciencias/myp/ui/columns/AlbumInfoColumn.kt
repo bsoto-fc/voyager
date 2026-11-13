@@ -71,6 +71,8 @@ fun albumInfoColumn(
                 var name by remember { mutableStateOf(selectedAlbum.name) }
                 var year by remember { mutableStateOf(selectedAlbum.year) }
 
+                var errorMessage by remember { mutableStateOf("") }
+
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -102,7 +104,12 @@ fun albumInfoColumn(
                 ) {
                     TextField(
                         value = name,
-                        onValueChange = { name = it },
+                        onValueChange = {
+                            errorMessage = ""
+                            if(it.isEmpty())
+                                errorMessage = "El nombre no puede estar vacío"
+                            name = it
+                        },
                         modifier = Modifier.weight(1f),
                         label = { Text("Nombre") },
                         singleLine = true,
@@ -112,7 +119,8 @@ fun albumInfoColumn(
                                 modifier = Modifier.size(24.dp),
                                 contentDescription = "Nombre"
                             )
-                        }
+                        },
+                        isError = errorMessage.isNotEmpty()
                     )
                 }
                 Row(
@@ -125,6 +133,7 @@ fun albumInfoColumn(
                     TextField(
                         value = yearString,
                         onValueChange = { newValue ->
+                            errorMessage = ""
                             runCatching { newValue.toInt() }.fold(
                                 onSuccess = { 
                                     yearString = newValue

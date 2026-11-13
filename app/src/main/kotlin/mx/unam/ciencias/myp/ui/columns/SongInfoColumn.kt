@@ -47,8 +47,6 @@ fun songInfoColumn(
 
     var showEditPerformerDialog by remember { mutableStateOf(false) }
 
-    var filters by remember { mutableStateOf<Filters>(Filters()) }
-
     if(showEditPerformerDialog) {
         EditPerformerDialog(onConfirmation = { showEditPerformerDialog = false },
                             onDismiss = { showEditPerformerDialog = false },
@@ -77,10 +75,20 @@ fun songInfoColumn(
                 var year by remember {mutableStateOf(selectedSong.year) }
                 var genre by remember {mutableStateOf(selectedSong.genre) }
                 
-                var albumName = remember(databaseDriver) { databaseDriver?.getAlbumNameById(idAlbum) ?: "" }
-                var performerName = remember(databaseDriver) { databaseDriver?.getPerformerNameById(idPerformer) ?: "" }
+                var albumName by remember { mutableStateOf("") }
+                var performerName by remember { mutableStateOf("") }
 
                 var performerType by remember { mutableStateOf(2) }
+
+                var errorMessage by remember { mutableStateOf("") }
+
+                LaunchedEffect(databaseDriver) {
+                    databaseDriver?.let {
+                        albumName = it.getAlbumNameById(idAlbum)
+                        performerName = it.getPerformerNameById(idPerformer)
+                        performerType = runCatching { it.getPerformerType(idPerformer) }.getOrElse { 2 }
+                    }
+                }
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -113,7 +121,12 @@ fun songInfoColumn(
                 ) {
                     TextField(
                         value = title,
-                        onValueChange = { title = it },
+                        onValueChange = {
+                            errorMessage = ""
+                            if(it.isEmpty())
+                                errorMessage = "El título no puede estar vacío"
+                            title = it
+                        },
                         modifier = Modifier.weight(1f),
                         label = { Text("Titulo") },
                         singleLine = true,
@@ -123,7 +136,8 @@ fun songInfoColumn(
                                 modifier = Modifier.size(24.dp),
                                 contentDescription = "Titulo"
                             )
-                        }
+                        },
+                        isError = errorMessage.isNotEmpty()
                     )
                 }
                 Row(
@@ -131,11 +145,11 @@ fun songInfoColumn(
                 ) {
                     
                     var trackString by remember { mutableStateOf(track.toString()) }
-                    var errorMessage by remember { mutableStateOf("") }
                     
                     TextField(
                         value = trackString,
                         onValueChange = { newValue ->
+                            errorMessage = ""
                             runCatching { newValue.toInt() }.fold(
                                 onSuccess = { 
                                     trackString = newValue
@@ -165,11 +179,11 @@ fun songInfoColumn(
                 ) {
                     
                     var yearString by remember { mutableStateOf(year.toString()) }
-                    var errorMessage by remember { mutableStateOf("") }
                     
                     TextField(
                         value = yearString,
                         onValueChange = { newValue ->
+                            errorMessage = ""
                             runCatching { newValue.toInt() }.fold(
                                 onSuccess = { 
                                     yearString = newValue
@@ -199,7 +213,12 @@ fun songInfoColumn(
                 ) {
                     TextField(
                         value = genre,
-                        onValueChange = { genre = it },
+                        onValueChange = {
+                            errorMessage = ""
+                            if(it.isEmpty())
+                                errorMessage = "El género no puede estar vacío"
+                            genre = it
+                        },
                         modifier = Modifier.weight(1f),
                         label = { Text("Género") },
                         singleLine = true,
@@ -209,7 +228,8 @@ fun songInfoColumn(
                                 modifier = Modifier.size(24.dp),
                                 contentDescription = "Género"
                             )
-                        }
+                        },
+                        isError = errorMessage.isNotEmpty()
                     )
                 }
                 Row(
@@ -218,6 +238,9 @@ fun songInfoColumn(
                     TextField(
                         value = albumName,
                         onValueChange = {
+                            errorMessage = ""
+                            if(it.isEmpty())
+                                errorMessage = "El nombre de álbum no puede estar vacío"
                             albumName = it
                         },
                         modifier = Modifier.weight(1f),
@@ -229,7 +252,8 @@ fun songInfoColumn(
                                 modifier = Modifier.size(24.dp),
                                 contentDescription = "Album"
                             )
-                        }
+                        },
+                        isError = errorMessage.isNotEmpty()
                     )
                 }
                 Row(
@@ -237,10 +261,12 @@ fun songInfoColumn(
                 ) {
 
                     var showMenu by remember { mutableStateOf(false) }
-
                     TextField(
                         value = performerName,
                         onValueChange = {
+                            errorMessage = ""
+                            if(it.isEmpty())
+                                errorMessage = "El intérprete no puede estar vacío"
                             performerName = it
                         },
                         modifier = Modifier.weight(1f),
@@ -252,7 +278,8 @@ fun songInfoColumn(
                                 modifier = Modifier.size(24.dp),
                                 contentDescription = "Intérprete"
                             )
-                        }
+                        },
+                        isError = errorMessage.isNotEmpty()
                     )
                     // https://kotlinlang.org/api/compose-multiplatform/material3/androidx.compose.material3/-dropdown-menu.html
                     Box() {
@@ -272,6 +299,9 @@ fun songInfoColumn(
                                 text = { Text("Persona") },
                                 onClick = {
                                     performerType = Types.TYPE_PERSON
+                                    var personExists = databaseDriver?.personExists(performerName) ?: false
+                                    if(!personExists)
+                                        errorMessage = "Persona inexistente"
                                     showMenu = false
                                 },
                                 leadingIcon = { Icon(Icons.Filled.Person, contentDescription = null) }
@@ -280,6 +310,9 @@ fun songInfoColumn(
                                 text = { Text("Grupo") },
                                 onClick = {
                                     performerType = Types.TYPE_GROUP
+                                    var groupExists = databaseDriver?.groupExists(performerName) ?: false
+                                    if(!groupExists)
+                                        errorMessage = "Grupo inexistente"
                                     showMenu = false
                                 },
                                 leadingIcon = { Icon(Icons.Filled.Star, contentDescription = null) }
@@ -289,6 +322,7 @@ fun songInfoColumn(
                                 onClick = {
                                     performerType = Types.TYPE_UNKNOWN
                                     showMenu = false
+                                    errorMessage = ""
                                 },
                                 leadingIcon = { Icon(Icons.Filled.Lock, contentDescription = null) }
                             )
@@ -310,20 +344,32 @@ fun songInfoColumn(
                     Button(
                         colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
                         onClick = {
-                            idAlbum = databaseDriver?.getAlbumIdByName(albumName, path, year) ?: 0
-                            idPerformer = databaseDriver?.getPerformerIdByName(performerName, performerType) ?: 0
-                            databaseDriver?.updateRola(Rola(
-                                                           idRola = idRola,
-                                                           idPerformer = idPerformer,
-                                                           idAlbum = idAlbum,
-                                                           path = path,
-                                                           title = title,
-                                                           track = track,
-                                                           year = year,
-                                                           genre = genre
-                                                       ))
+                            if(errorMessage.isEmpty()) {
+                                idAlbum = databaseDriver?.getAlbumIdByName(albumName, path, year) ?: 0
+                                idPerformer = databaseDriver?.getPerformerIdByName(performerName, performerType) ?: 0
+                                databaseDriver?.updateRola(Rola(
+                                                               idRola = idRola,
+                                                               idPerformer = idPerformer,
+                                                               idAlbum = idAlbum,
+                                                               path = path,
+                                                               title = title,
+                                                               track = track,
+                                                               year = year,
+                                                               genre = genre
+                                                           ))
+                            }
                         }) {
                         Text("Guardar")
+                    }
+                }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if(errorMessage.isNotEmpty()){
+                        Text(
+                            text = errorMessage,
+                            color = MaterialTheme.colorScheme.error
+                        )
                     }
                 }
             }

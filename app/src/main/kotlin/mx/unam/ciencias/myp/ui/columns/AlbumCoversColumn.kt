@@ -128,7 +128,7 @@ fun albumCoversColumn(
                                     contentDescription = album.name + (album.year?.let { " - $it" })
                                 )
                                 Text(
-                                    text = album.name + (album.year?.let { " - $it" }),
+                                    text = album.name + (album.year?.let { " - $it" } ?: ""),
                                     style = TextStyle(fontWeight = FontWeight.Bold),
                                     textAlign = TextAlign.Center,
                                     fontSize = 10.sp

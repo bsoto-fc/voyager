@@ -513,7 +513,7 @@ class DatabaseDriver(private val connection: Connection) {
     fun associatePeopleAndGroups(groupId: Int, members: List<String>) {
         members.forEach { member ->
             var memberId = runCatching { getPersonId(member) }.getOrNull()
-            if(memberId == null) return@forEach
+            if(memberId == null) throw IllegalArgumentException("Se incluye persona no existente.")
             val insertSql = "INSERT INTO in_group (id_person, id_group) VALUES (?, ?)"
             connection.prepareStatement(insertSql).use { stmt ->
                 stmt.setInt(1, memberId)
@@ -521,5 +521,38 @@ class DatabaseDriver(private val connection: Connection) {
                 stmt.executeUpdate()
             }
         }
+    }
+
+    fun getPerformerType(id: Int): Int {
+        val selectSql = "SELECT id_type FROM performers WHERE id_performer = ?"
+        connection.prepareStatement(selectSql).use { stmt ->
+            stmt.setInt(1, id)
+            val rs = stmt.executeQuery()
+            if (rs.next())
+                return rs.getInt("id_type")
+        }
+        throw IllegalArgumentException("Performer inexistente.")
+    }
+
+    fun personExists(name: String): Boolean {
+        val selectSql = "SELECT id_person FROM persons WHERE stage_name = ?"
+        connection.prepareStatement(selectSql).use { stmt ->
+            stmt.setString(1, name)
+            val rs = stmt.executeQuery()
+            if (rs.next())
+                return true
+        }
+        return false
+    }
+
+    fun groupExists(name: String): Boolean {
+        val selectSql = "SELECT id_group FROM groups WHERE name = ?"
+        connection.prepareStatement(selectSql).use { stmt ->
+            stmt.setString(1, name)
+            val rs = stmt.executeQuery()
+            if (rs.next())
+                return true
+        }
+        return false
     }
 }

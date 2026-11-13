@@ -281,9 +281,24 @@ fun EditPerformerDialog(
                         label = { Text("Nombres de los miembros") },
                         singleLine = true,
                         enabled = performerType == 1,
+                        isError = errorMsg.isNotEmpty()
                     )
                 }
-                
+
+                if(!errorMsg.isEmpty()) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(0.dp, 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = errorMsg,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -326,8 +341,16 @@ fun EditPerformerDialog(
                                     var groupId: Int? = null
                                     runCatching { groupId = databaseDriver?.getOrCreateGroup(newGroup) }.fold(
                                         onSuccess = {
-                                            groupId?.let { databaseDriver?.associatePeopleAndGroups(it, groupMembers) }
-                                            onConfirmation()
+                                            groupId?.let { id ->
+                                                runCatching {
+                                                    databaseDriver?.associatePeopleAndGroups(id, groupMembers)
+                                                }.fold(
+                                                    onSuccess = {
+                                                        onConfirmation()
+                                                    },
+                                                    onFailure = { errorMsg = it.message ?: "Error desconocido." }
+                                                )
+                                            }
                                         },
                                         onFailure = {
                                             errorMsg = "Error al obtener/crear grupo."
@@ -338,17 +361,6 @@ fun EditPerformerDialog(
                         }
                     ) {
                         Text("Confirmar")
-                    }
-                }
-                if(!errorMsg.isEmpty()) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(0.dp, 8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(errorMsg)
                     }
                 }
             }
