@@ -23,3 +23,9 @@ $ cd voyager/
 $ ./gradlew run
 ```
 
+Para generar un archivo .jar,
+```
+$ ./gradlew build
+$ java -jar app/build/libs/app-standalone.jar
+```
+
