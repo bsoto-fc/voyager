@@ -35,6 +35,7 @@ dependencies {
     implementation("net.jthink:jaudiotagger:3.0.1")
     implementation("org.xerial:sqlite-jdbc:3.53.4.0")
     implementation("eu.iamkonstantin.kotlin:gadulka:1.14.0")
+    implementation("androidx.compose.material:material-icons-extended:1.7.8")
     listOf("base", "graphics", "controls", "swing", "web", "media").forEach {
         implementation("org.openjfx:javafx-$it:23:linux")
     }

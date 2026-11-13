@@ -15,6 +15,11 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.dp
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Clear
 import org.jetbrains.skia.Image as SkiaImage
 
 import eu.iamkonstantin.kotlin.gadulka.*
@@ -29,17 +34,34 @@ import kotlinx.coroutines.*
 
 @Composable
 fun AudioPlayerUI(
+    modifier: Modifier = Modifier,
     song: Rola,
-    player: GadulkaPlayer
+    player: GadulkaPlayer,
+    currentPlayingSong: Rola?,
+    onCurrentPlayingSongChange: (Rola?) -> Unit,
+    playing: Boolean,
+    canPlayPause: Boolean,
+    onPlayingChange: (Boolean) -> Unit,
+    onDifferentSongSelect: (Rola) -> Unit,
+    onPlaybackStarted: () -> Unit,
+    onPlaybackStopped: () -> Unit
 ) {
+    var currentSelectedSong by remember(song) { mutableStateOf<Rola>(song) }
 
-    val mp3Path = song.path
+    val mp3Path by remember(currentSelectedSong.path) { mutableStateOf<String>(currentSelectedSong.path) }
     
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    var songDuration by remember { mutableStateOf(0L) }
+    var songPosition by remember { mutableStateOf(0L) }
+    var sliderPosition by remember { mutableFloatStateOf(0f) }
+
     Column(
-        modifier = Modifier
+        modifier
             .fillMaxWidth()
-            .padding(8.dp)
+            .fillMaxHeight()
+            .padding(8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -63,7 +85,7 @@ fun AudioPlayerUI(
                 ComposeImage(
                     bitmap = it,
                     modifier = Modifier.size(250.dp),
-                    contentDescription = "${song.track}. ${song.title}" 
+                    contentDescription = "${currentSelectedSong.track}. ${currentSelectedSong.title}" 
                 )
             }
         }
@@ -71,11 +93,69 @@ fun AudioPlayerUI(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = "${song.track}. ${song.title}" ,
+                text = "${currentSelectedSong.track}. ${currentSelectedSong.title}" ,
                 style = TextStyle(fontWeight = FontWeight.Bold),
                 textAlign = TextAlign.Center,
                 fontSize = 30.sp
             )
+        }
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            var isScrubbing by remember { mutableStateOf(false) }
+            
+            LaunchedEffect(currentSelectedSong, currentPlayingSong, playing, player) {
+                if(currentSelectedSong.path != currentPlayingSong?.path) {
+                    sliderPosition = 0f
+                    songPosition = 0L
+                    songDuration = 0L
+                    return@LaunchedEffect
+                }
+                while (playing) {
+                    val duration = player.currentDuration() ?: 0L
+                    val position = player.currentPosition() ?: 0L
+                    
+                    if (duration > 0L) {
+                        songDuration = duration
+                        songPosition = position
+                        
+                        if (!isScrubbing) {
+                            sliderPosition =
+                                (position.toFloat() / duration.toFloat()).coerceIn(0f, 1f)
+                        }
+                    }
+                    
+                    kotlinx.coroutines.delay(250)
+                }
+            }
+            
+            Column {
+                Slider(
+                    value = sliderPosition,
+                    valueRange = 0f..1f,
+                    onValueChange = { newValue ->
+                        isScrubbing = true
+                        sliderPosition = newValue
+                    },
+                    onValueChangeFinished = {
+                        if (playing && songDuration > 0L) {
+                            player.seekTo((sliderPosition * songDuration).toLong())
+                        }
+                        isScrubbing = false
+                    },
+                    enabled = songDuration > 0L,
+                    colors = SliderDefaults.colors(
+                        activeTrackColor = Color.Black,
+                        activeTickColor = Color.Black,
+                        thumbColor = Color.Black
+                    )
+                )
+                val posMinutes = songPosition / 1000 / 60
+                val posSeconds = songPosition / 1000 % 60
+                val durMinutes = songDuration / 1000 / 60
+                val durSeconds = songDuration / 1000 % 60
+                Text(text = "$posMinutes:$posSeconds/$durMinutes:$durSeconds")
+            }
         }
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -83,18 +163,51 @@ fun AudioPlayerUI(
             Button(
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
                 onClick = {
+                    onCurrentPlayingSongChange(currentSelectedSong)
+                    onPlaybackStarted()
+                    onPlayingChange(true)
                     scope.launch {
                         player.play(File(mp3Path).toURI().toString())
                     }
                 }) {
-                Text("Play")
+                Text("Reproducir")
             }
             Button(
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
                 onClick = {
                     player.stop()
+                    onPlayingChange(false)
+                    onPlaybackStopped()
+                    songPosition = 0L
+                    sliderPosition = 0f
                 }) {
-                Text("Stop")
+                Text("Detener")
+            }
+            if(canPlayPause){
+                Button(
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
+                    onClick = {
+                        if(playing)
+                            player.pause()
+                        else
+                            player.play()
+                        onPlayingChange(!playing)
+                    }) {
+                    val text = if(playing) "Pausar" else "Continuar"
+                    Text(text = text)
+                }
+            }
+            currentPlayingSong?.let {
+                if(it.path != currentSelectedSong.path) {
+                    Button(
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
+                        onClick = {
+                            currentSelectedSong = it
+                            onDifferentSongSelect(currentSelectedSong)
+                        }) {
+                        Icon(Icons.Default.Clear, contentDescription = "Regresar")
+                    }
+                }
             }
         }
     }

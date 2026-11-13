@@ -55,6 +55,7 @@ import mx.unam.ciencias.myp.ui.columns.audioLibraryColumn
 import mx.unam.ciencias.myp.ui.columns.albumCoversColumn
 import mx.unam.ciencias.myp.ui.columns.songInfoColumn
 import mx.unam.ciencias.myp.ui.columns.albumInfoColumn
+import mx.unam.ciencias.myp.ui.audio.AudioPlayerUI
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -65,13 +66,18 @@ fun mainScreen() {
     var selectedSong by remember { mutableStateOf<Rola?>(null) }
     var selectedAlbumId by remember { mutableStateOf<Int?>(null) }
 
-    var isPlayerSelected by remember { mutableStateOf(true) }
+    var isPlayerSelected by remember { mutableStateOf(false) }
 
     val player = rememberGadulkaState()
+
+    var isPlaying by remember { mutableStateOf(false) }
+    var currentPlayingSong by remember(player) { mutableStateOf<Rola?>(null) }
 
     var isSongInfoSelected by remember { mutableStateOf(false) }
 
     var isAlbumInfoSelected by remember { mutableStateOf(false) }
+
+    var playerCanPlayPause by remember { mutableStateOf(false) }
 
     DisposableEffect(Unit) {
         onDispose {
@@ -143,19 +149,44 @@ fun mainScreen() {
                             dbManager = controller.db,
                             onSongSelect = { song ->
                                 selectedSong = song
+                                isPlayerSelected = true
                             }
                         )
                     }
-                    albumCoversColumn(
-                        modifier = Modifier.weight(1f),
-                        dbManager = controller.db,
-                        playingSong = selectedSong,
-                        isPlayerSelected = isPlayerSelected,
-                        player = player,
-                        onAlbumSelect = { id ->
-                            selectedAlbumId = id
+                    if(isPlayerSelected && selectedSong != null) {
+                        val song = selectedSong
+                        song?.let {
+                            AudioPlayerUI(
+                                modifier = Modifier.weight(1f),
+                                song = it,
+                                player = player,
+                                currentPlayingSong = currentPlayingSong,
+                                onCurrentPlayingSongChange = { currentPlayingSong = it },
+                                playing = isPlaying,
+                                canPlayPause = playerCanPlayPause,
+                                onPlayingChange = {
+                                    isPlaying = it
+                                },
+                                onPlaybackStarted = {
+                                    playerCanPlayPause = true
+                                },
+                                onPlaybackStopped = {
+                                    playerCanPlayPause = false
+                                },
+                                onDifferentSongSelect = { newSong ->
+                                    selectedSong = newSong
+                                }
+                            )
                         }
-                    )
+                    } else {
+                        albumCoversColumn(
+                            modifier = Modifier.weight(1f),
+                            dbManager = controller.db,
+                            onAlbumSelect = { id ->
+                                selectedAlbumId = id
+                            }
+                        )
+                    }
                 }
             }
         }

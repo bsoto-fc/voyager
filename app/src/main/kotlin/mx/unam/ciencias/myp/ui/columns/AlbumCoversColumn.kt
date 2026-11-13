@@ -46,10 +46,7 @@ import mx.unam.ciencias.myp.ui.audio.AudioPlayerUI
 @Composable
 fun albumCoversColumn(
     modifier: Modifier = Modifier,
-    playingSong: Rola? = null,
     dbManager: DatabaseDriver? = null,
-    isPlayerSelected: Boolean = false ,
-    player: GadulkaPlayer? = null,
     onAlbumSelect: (Int) -> Unit
 ) {
     Column(
@@ -59,85 +56,78 @@ fun albumCoversColumn(
             .padding(8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        if(isPlayerSelected && playingSong != null && player!=null) {
-            AudioPlayerUI(
-                song = playingSong,
-                player = player
-            )
-        } else {
-            var albums by remember { mutableStateOf<List<AlbumRow>>(emptyList()) }
+        var albums by remember { mutableStateOf<List<AlbumRow>>(emptyList()) }
 
-            albums = albums.filterNot { it.name == "Unknown" }
+        albums = albums.filterNot { it.name == "Unknown" }
 
-            val albumArtworkSize = 135.dp
+        val albumArtworkSize = 135.dp
 
-            LaunchedEffect(dbManager) {
-                if(dbManager != null){
-                    albums = withContext(Dispatchers.IO) { dbManager.getAllAlbums() }
-                }
+        LaunchedEffect(dbManager) {
+            if(dbManager != null){
+                albums = withContext(Dispatchers.IO) { dbManager.getAllAlbums() }
             }
+        }
 
-            LazyVerticalGrid(
-                columns = GridCells.Adaptive(minSize = 128.dp),
-                // https://stackoverflow.com/questions/68610360/how-to-add-space-between-grid-items-in-jetpack-compose
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                items(albums) { album ->
-                    val artworkName = "${album.path}".hashCode().toString() + ".jpg"
-                    val artworkPath = Path.of(DirConstants.ARTWORK_CACHE_DIR.toAbsolutePath().toString(), artworkName).toString()
+        LazyVerticalGrid(
+            columns = GridCells.Adaptive(minSize = 128.dp),
+            // https://stackoverflow.com/questions/68610360/how-to-add-space-between-grid-items-in-jetpack-compose
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            items(albums) { album ->
+                val artworkName = "${album.path}".hashCode().toString() + ".jpg"
+                val artworkPath = Path.of(DirConstants.ARTWORK_CACHE_DIR.toAbsolutePath().toString(), artworkName).toString()
 
-                    val artwork = produceState<ImageBitmap?>(
-                        initialValue = null,
-                        key1 = artworkPath
-                    ) {
-                        value = withContext(Dispatchers.IO) {
-                            runCatching {
-                                SkiaImage.makeFromEncoded(File(artworkPath).readBytes())
-                                    .toComposeImageBitmap()
-                            }.getOrNull()
-                        }
-                    }.value
-                
-                    artwork?.let {
-                        ComposeImage(
-                            bitmap = it,
-                            contentDescription = album.name,
-                            modifier = Modifier
-                                .size(albumArtworkSize)
-                                .clickable {
-                                    onAlbumSelect(album.id)
-                                }
-                        )
-                    } ?: Box(
+                val artwork = produceState<ImageBitmap?>(
+                    initialValue = null,
+                    key1 = artworkPath
+                ) {
+                    value = withContext(Dispatchers.IO) {
+                        runCatching {
+                            SkiaImage.makeFromEncoded(File(artworkPath).readBytes())
+                                .toComposeImageBitmap()
+                        }.getOrNull()
+                    }
+                }.value
+            
+                artwork?.let {
+                    ComposeImage(
+                        bitmap = it,
+                        contentDescription = album.name,
                         modifier = Modifier
                             .size(albumArtworkSize)
-                            .border(1.dp, Color.Black)
-                            .clickable { onAlbumSelect(album.id) },
-                        content = {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .fillMaxHeight()
-                                    .padding(16.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Filled.PlayArrow,
-                                    contentDescription = album.name + (album.year?.let { " - $it" })
-                                )
-                                Text(
-                                    text = album.name + (album.year?.let { " - $it" } ?: ""),
-                                    style = TextStyle(fontWeight = FontWeight.Bold),
-                                    textAlign = TextAlign.Center,
-                                    fontSize = 10.sp
-                                )
-                                
+                            .clickable {
+                                onAlbumSelect(album.id)
                             }
-                        }
                     )
-                }
+                } ?: Box(
+                    modifier = Modifier
+                        .size(albumArtworkSize)
+                        .border(1.dp, Color.Black)
+                        .clickable { onAlbumSelect(album.id) },
+                    content = {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .fillMaxHeight()
+                                .padding(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.PlayArrow,
+                                contentDescription = album.name + (album.year?.let { " - $it" })
+                            )
+                            Text(
+                                text = album.name + (album.year?.let { " - $it" } ?: ""),
+                                style = TextStyle(fontWeight = FontWeight.Bold),
+                                textAlign = TextAlign.Center,
+                                fontSize = 10.sp
+                            )
+                            
+                        }
+                    }
+                )
             }
         }
     }
